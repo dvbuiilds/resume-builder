@@ -13,6 +13,8 @@ import type {
 import type { ThemeColorValues, ThemeFontValues } from '../../types/theme';
 import { usePDFStyles } from '../../utils/pdfTheme';
 import { SectionNameMapping } from '../../config/section-name-config';
+import { calculateContentMetrics } from '../../utils/calculateContentDensity';
+import { calculateFontScaleFactor } from '../../utils/calculateFontScale';
 
 // Import to register fonts
 import '../../utils/pdfFonts';
@@ -54,7 +56,21 @@ export const PDFResume: React.FC<PDFResumeProps> = ({
   color,
   font,
 }) => {
-  const styles = usePDFStyles(color, font);
+  // Calculate content metrics and determine scale factor for adaptive font sizing
+  const contentMetrics = calculateContentMetrics({
+    title,
+    socialHandles,
+    workExperience,
+    projects,
+    education,
+    activities,
+    skills,
+    achievements,
+    sectionsOrder,
+  });
+  const scaleFactor = calculateFontScaleFactor(contentMetrics.estimatedHeight);
+
+  const styles = usePDFStyles(color, font, scaleFactor);
 
   const renderPDFSection = (sectionName: ActiveSectionName) => {
     switch (sectionName) {
@@ -117,7 +133,7 @@ export const PDFResume: React.FC<PDFResumeProps> = ({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation="portrait" style={styles.page}>
         {sectionsOrder.map((sectionName) => renderPDFSection(sectionName))}
       </Page>
     </Document>
