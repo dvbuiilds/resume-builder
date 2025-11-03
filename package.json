@@ -1,5 +1,5 @@
 {
-  "name": "online-video-downloader",
+  "name": "resume-builder",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,12 +12,10 @@
   "dependencies": {
     "@hello-pangea/dnd": "^17.0.0",
     "@react-pdf/renderer": "^4.3.1",
-    "get-video-id": "^4.1.5",
     "next": "^15.5.6",
     "react": "^18",
     "react-dom": "^18",
-    "react-icons": "^5.4.0",
-    "ytdl-core": "^4.11.5"
+    "react-icons": "^5.4.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -25,7 +23,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@vitejs/plugin-react": "^5.0.4",
+    "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.0.1",
     "eslint": "^8",
     "eslint-config-next": "14.1.4",
