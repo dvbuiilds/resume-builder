@@ -90,8 +90,8 @@ export const Resume = () => {
 
   return (
     <div
-      className={`${fontClassName} shadow-lg w-full bg-white p-4 flex flex-col`}
-      style={fontStyle}
+      className={`${fontClassName} shadow-lg bg-white p-4 flex flex-col`}
+      style={{ ...fontStyle, width: A4_SHEET_CONFIG.width }}
     >
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="list">

@@ -8,7 +8,7 @@ export const EditPanelToggleButton: React.FC = () => {
   return (
     <button
       onClick={openEditPanel}
-      className="fixed right-0 top-1/2 transform -translate-y-1/2 z-50 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-l-lg shadow-lg transition-all duration-300 ease-in-out flex items-center gap-2"
+      className="fixed left-0 top-1/2 transform -translate-y-1/2 z-50 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-r-lg shadow-lg transition-all duration-300 ease-in-out flex items-center gap-2"
       aria-label="Open edit panel"
     >
       <IoMdArrowBack className="text-xl" />
