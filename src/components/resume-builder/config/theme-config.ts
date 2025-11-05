@@ -14,6 +14,7 @@ export const themeColorsReadOnly = Object.freeze(themeColors);
 export const themeFonts = {
   cormorantGaramond: 'Cormorant Garamond',
   timesNewRoman: 'Times New Roman',
+  inter: 'Inter',
 } as const;
 
 // Theme Fonts Read Only

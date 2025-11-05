@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cormorant_Garamond } from 'next/font/google';
+import { Cormorant_Garamond, Inter } from 'next/font/google';
 
 // THIRD_PARTY
 import {
@@ -12,6 +12,8 @@ import {
 // HOOKS
 import { useLayout } from '../../context/LayoutContext';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
+import { useResumeFontStyles } from '../../hooks/useResumeFontStyles';
+import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 
 // COMPONENTS
 import { Title } from './Title';
@@ -34,6 +36,8 @@ const cormorantGaramond = Cormorant_Garamond({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
 });
+
+const inter = Inter({ subsets: ['latin'] });
 
 const A4_SHEET_CONFIG = {
   width: '595px',
@@ -67,7 +71,7 @@ const renderSection = (sectionName: ActiveSectionName) => {
       return <Achievements />;
     }
     default: {
-      return;
+      return null;
     }
   }
 };
@@ -76,35 +80,23 @@ export const Resume = () => {
   const { sectionsOrder, updateSectionsOrder } = useLayout();
   const { font } = useResumeTheme();
 
-  // Get the appropriate font className based on the selected font
-  const getFontClassName = () => {
-    if (font === 'Cormorant Garamond') {
-      return cormorantGaramond.className;
-    }
-    // Times New Roman is a system font, no className needed
-    return '';
-  };
+  // Use custom hook for font styling
+  const { className: fontClassName, style: fontStyle } = useResumeFontStyles({
+    font,
+    cormorantGaramondClassName: cormorantGaramond.className,
+    interClassName: inter.className,
+  });
 
-  const onDragEnd = (result: DropResult<string>) => {
-    if (!result.destination) return;
-    if (result.destination.index === result.source.index) {
-      return;
-    }
-
-    updateSectionsOrder((prev) => {
-      // getting new array reference.
-      const newItems = Array.from(prev);
-      // removing the dragged item from the existing array. the index of the dragged item is available in result.source.index.
-      const [reorderedItem] = newItems.splice(result.source.index, 1);
-      // placing the dragged item to the destination index. the destination index is available in result.destination.index.
-      newItems.splice(result?.destination?.index ?? 0, 0, reorderedItem);
-      return newItems;
-    });
-  };
+  // Use custom hook for drag and drop functionality
+  const { onDragEnd } = useDragAndDrop({
+    sectionsOrder,
+    updateSectionsOrder,
+  });
 
   return (
     <div
-      className={`${getFontClassName()} shadow-md w-3/4 bg-slate-50 mt-2 p-4 flex flex-col`}
+      className={`${fontClassName} shadow-md w-3/4 bg-slate-50 mt-2 p-4 flex flex-col`}
+      style={fontStyle}
     >
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="list">
@@ -112,8 +104,8 @@ export const Resume = () => {
             <div {...provided.droppableProps} ref={provided.innerRef}>
               {sectionsOrder.map((sectionName, sectionIndex) => (
                 <Draggable
-                  key={`socialHandeLabel_${sectionIndex}`}
-                  draggableId={`socialHandeLabel_${sectionIndex}`}
+                  key={`${sectionName}_${sectionIndex}`}
+                  draggableId={`${sectionName}_${sectionIndex}`}
                   index={sectionIndex}
                 >
                   {(provided) => (

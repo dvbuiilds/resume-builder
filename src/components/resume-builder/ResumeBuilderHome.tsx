@@ -9,6 +9,7 @@ import { LayoutProvider, useLayout } from './context/LayoutContext';
 import { ResumeThemeProvider } from './context/ResumeThemeContext';
 import { Resume } from './components/resume-preview/Resume';
 import { ThemeChangingNavbar } from './ThemeChangingNavbar';
+import { DownloadButton } from './DownloadButton';
 import { EditPanel } from './components/edit-panel/EditPanel';
 import { SectionSelectionCards } from './SectionSelectionCards';
 
@@ -48,6 +49,7 @@ export const ResumeBuilder: React.FC = () => {
           </div>
           {renderEditPanel()}
         </div>
+        <DownloadButton />
       </ResumeDataProvider>
     </>
   );
