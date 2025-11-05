@@ -20,7 +20,7 @@ export const useResumeFontStyles = ({
   return useMemo(() => {
     const getFontClassName = () => {
       if (font === 'Cormorant Garamond') {
-        return cormorantGaramondClassName;
+        return `${cormorantGaramondClassName} cormorant-scale`;
       }
       if (font === 'Inter') {
         return interClassName;

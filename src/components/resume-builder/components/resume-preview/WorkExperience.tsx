@@ -16,7 +16,7 @@ export const WorkExperience: React.FC = () => {
 
   return (
     <div className="my-1">
-      <h2 className="font-medium text-sm" style={{ color }}>
+      <h2 className="font-bold text-sm" style={{ color }}>
         {workExperience.title}
       </h2>
       <HorizontalRule color={color} />
@@ -34,10 +34,10 @@ const Experience: React.FC<{ index: number; data: Experience }> = ({
   return (
     <div className="mb-1">
       <div className="flex justify-between">
-        <div className="font-medium text-xs">
+        <div className="font-bold text-xs">
           {data.companyName} - {data.jobTitle}
         </div>
-        <div className="font-medium text-xs">
+        <div className="font-bold text-xs">
           {data.startDate} — {data.endDate}
         </div>
       </div>

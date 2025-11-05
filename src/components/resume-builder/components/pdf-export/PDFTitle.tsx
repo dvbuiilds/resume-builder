@@ -9,7 +9,7 @@ interface PDFTitleProps {
 export const PDFTitle: React.FC<PDFTitleProps> = ({ title, styles }) => {
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title}>{title.toUpperCase()}</Text>
     </View>
   );
 };

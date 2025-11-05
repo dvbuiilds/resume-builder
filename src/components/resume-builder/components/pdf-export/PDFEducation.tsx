@@ -23,10 +23,19 @@ export const PDFEducation: React.FC<PDFEducationProps> = ({
         <View key={index} style={{ marginBottom: 10 }}>
           <View style={styles.row}>
             <View style={styles.flex1}>
-              <Text style={styles.itemTitle}>{course.courseName}</Text>
-              <Text style={styles.itemSubtitle}>{course.institutionName}</Text>
+              <Text style={[styles.itemTitle, { fontWeight: 700 }]}>
+                {course.courseName}
+              </Text>
+              <Text
+                style={[
+                  styles.itemSubtitle,
+                  { fontWeight: 700, fontStyle: 'normal' },
+                ]}
+              >
+                {course.institutionName}
+              </Text>
             </View>
-            <Text style={styles.itemDate}>
+            <Text style={[styles.itemDate, { fontWeight: 700 }]}>
               {course.startDate} - {course.endDate}
             </Text>
           </View>

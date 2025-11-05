@@ -23,10 +23,19 @@ export const PDFWorkExperience: React.FC<PDFWorkExperienceProps> = ({
         <View key={index} style={{ marginBottom: 10 }}>
           <View style={styles.row}>
             <View style={styles.flex1}>
-              <Text style={styles.itemTitle}>{exp.jobTitle}</Text>
-              <Text style={styles.itemSubtitle}>{exp.companyName}</Text>
+              <Text style={[styles.itemTitle, { fontWeight: 700 }]}>
+                {exp.jobTitle}
+              </Text>
+              <Text
+                style={[
+                  styles.itemSubtitle,
+                  { fontWeight: 700, fontStyle: 'normal' },
+                ]}
+              >
+                {exp.companyName}
+              </Text>
             </View>
-            <Text style={styles.itemDate}>
+            <Text style={[styles.itemDate, { fontWeight: 700 }]}>
               {exp.startDate} - {exp.endDate}
             </Text>
           </View>

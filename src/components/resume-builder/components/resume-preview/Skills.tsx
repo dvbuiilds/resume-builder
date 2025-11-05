@@ -16,7 +16,7 @@ export const Skills: React.FC = () => {
 
   return (
     <div className="my-1">
-      <h2 className="font-medium text-sm" style={{ color }}>
+      <h2 className="font-bold text-sm" style={{ color }}>
         {skills.title}
       </h2>
       <HorizontalRule color={color} />
@@ -34,7 +34,7 @@ const SkillSet: React.FC<{
 }> = ({ data }) => {
   return (
     <div className="text-xs">
-      <span className="font-medium mr-1">{data.title}:</span>
+      <span className="font-bold mr-1">{data.title}:</span>
       <span>{data.skills.join(', ')}</span>
     </div>
   );

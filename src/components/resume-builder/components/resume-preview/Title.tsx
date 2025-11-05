@@ -9,7 +9,7 @@ export const Title: React.FC = () => {
   const { color } = useResumeTheme();
   return (
     <div className="w-full">
-      <p className="text-center font-medium text-lg" style={{ color }}>
+      <p className="text-center font-bold text-lg uppercase" style={{ color }}>
         {title}
       </p>
     </div>

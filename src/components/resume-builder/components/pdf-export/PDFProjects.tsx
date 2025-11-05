@@ -23,12 +23,19 @@ export const PDFProjects: React.FC<PDFProjectsProps> = ({
         <View key={index} style={{ marginBottom: 10 }}>
           <View style={styles.row}>
             <View style={styles.flex1}>
-              <Text style={styles.itemTitle}>{project.projectTitle}</Text>
-              <Text style={styles.itemSubtitle}>
+              <Text style={[styles.itemTitle, { fontWeight: 700 }]}>
+                {project.projectTitle}
+              </Text>
+              <Text
+                style={[
+                  styles.itemSubtitle,
+                  { fontWeight: 700, fontStyle: 'normal' },
+                ]}
+              >
                 {project.organizationName}
               </Text>
             </View>
-            <Text style={styles.itemDate}>
+            <Text style={[styles.itemDate, { fontWeight: 700 }]}>
               {project.startDate} - {project.endDate}
             </Text>
           </View>

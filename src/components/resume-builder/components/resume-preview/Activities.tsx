@@ -16,7 +16,7 @@ export const Activities = () => {
 
   return (
     <div className="my-1">
-      <h2 className="font-medium text-sm" style={{ color }}>
+      <h2 className="font-bold text-sm" style={{ color }}>
         {activities.title}
       </h2>
       <HorizontalRule color={color} />
@@ -33,10 +33,10 @@ const ActivityItem: React.FC<{ index: number; data: ActivityItem }> = ({
 }) => (
   <div className="mb-1">
     <div className="flex justify-between">
-      <div className="font-medium text-xs">
+      <div className="font-bold text-xs">
         {data.institutionName} - {data.activityTitle}
       </div>
-      <div className="font-medium text-xs">
+      <div className="font-bold text-xs">
         {data.startDate} — {data.endDate}
       </div>
     </div>

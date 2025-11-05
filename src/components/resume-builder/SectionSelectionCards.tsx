@@ -43,7 +43,7 @@ export const SectionSelectionCards = () => {
   };
 
   return (
-    <div className="flex flex-wrap gap-4">
+    <div className="flex flex-wrap gap-2">
       {sectionsNameList.map((sectionName) => (
         <SectionSelectionCard
           key={sectionName}
@@ -65,7 +65,7 @@ const SectionSelectionCard: React.FC<{
 }> = ({ sectionName, sectionTitle, isSelected, onCardClick }) => {
   return (
     <div
-      className={`relative w-40 p-4 rounded-lg cursor-pointer transition-all duration-300 ${
+      className={`relative flex-none px-3 py-2 rounded-lg cursor-pointer transition-all duration-300 whitespace-nowrap ${
         isSelected ? 'border-2 border-blue-500' : 'border border-gray-300'
       }`}
       onClick={() => onCardClick(isSelected, sectionName)}

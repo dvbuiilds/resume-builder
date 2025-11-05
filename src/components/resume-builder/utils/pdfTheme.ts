@@ -16,10 +16,11 @@ export const usePDFStyles = (
         ? 'Inter'
         : 'Times-Roman';
 
-  // Base font sizes
-  const baseTitleSize = 18;
-  const baseHeadingSize = 14;
-  const baseTextSize = 12;
+  // Base font sizes (bump by +2 for Cormorant Garamond in PDF)
+  const sizeBump = font === 'Cormorant Garamond' ? 2 : 0;
+  const baseTitleSize = 18 + sizeBump;
+  const baseHeadingSize = 14 + sizeBump;
+  const baseTextSize = 12 + sizeBump;
 
   // Apply scaling with bounds
   const titleSize = Math.max(14, Math.min(22, baseTitleSize * scaleFactor));
@@ -41,7 +42,7 @@ export const usePDFStyles = (
     },
     heading: {
       fontSize: headingSize,
-      fontWeight: 500,
+      fontWeight: 700,
       color,
       marginBottom: 4,
     },
@@ -51,7 +52,7 @@ export const usePDFStyles = (
     },
     title: {
       fontSize: titleSize,
-      fontWeight: 500,
+      fontWeight: 700,
       textAlign: 'center',
       marginBottom: 4,
     },

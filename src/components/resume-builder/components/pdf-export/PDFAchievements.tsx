@@ -26,12 +26,21 @@ export const PDFAchievements: React.FC<PDFAchievementsProps> = ({
         <View key={index} style={{ marginBottom: 10 }}>
           <View style={styles.row}>
             <View style={styles.flex1}>
-              <Text style={styles.itemTitle}>{achievement.awardName}</Text>
-              <Text style={styles.itemSubtitle}>
+              <Text style={[styles.itemTitle, { fontWeight: 700 }]}>
+                {achievement.awardName}
+              </Text>
+              <Text
+                style={[
+                  styles.itemSubtitle,
+                  { fontWeight: 700, fontStyle: 'normal' },
+                ]}
+              >
                 {achievement.institutionName}
               </Text>
             </View>
-            <Text style={styles.itemDate}>{achievement.dateAwarded}</Text>
+            <Text style={[styles.itemDate, { fontWeight: 700 }]}>
+              {achievement.dateAwarded}
+            </Text>
           </View>
           {achievement.description && (
             <Text style={styles.itemDescription}>

@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 
 // PROVIDERS
 import { ResumeDataProvider } from './context/ResumeDataContext';
@@ -8,10 +8,9 @@ import { LayoutProvider, useLayout } from './context/LayoutContext';
 // COMPONENTS
 import { ResumeThemeProvider } from './context/ResumeThemeContext';
 import { Resume } from './components/resume-preview/Resume';
-import { ThemeChangingNavbar } from './ThemeChangingNavbar';
 import { DownloadButton } from './DownloadButton';
 import { EditPanel } from './components/edit-panel/EditPanel';
-import { SectionSelectionCards } from './SectionSelectionCards';
+import { EditPanelToggleButton } from './components/edit-panel/EditPanelToggleButton';
 
 // This Component is an HOC for ResumeBuilder so that the later can access LayoutContext.
 export const ResumeBuilderHome = () => {
@@ -27,27 +26,30 @@ export const ResumeBuilderHome = () => {
 export const ResumeBuilder: React.FC = () => {
   const { displayMode } = useLayout();
 
-  // We are memoizing this class as the value of resumeWidthClassName is dependent on 2 values of 'displayMode'. So that final className value can be calculated and cached against the corresponding value of displayMode. No need to re-calculating the className value again and again. And at the same time, we can't conditionally change the className string like `w-${displayMode === 'preview' ? '3/4' : '2/3}` on runtime.
-  const resumeWidthClassName = useMemo<string>(
-    () => (displayMode === 'preview' ? 'w-3/4' : 'w-2/3'),
+  // Calculate panel width based on edit panel visibility (fixed 500px)
+  const editPanelWidthClassName = useMemo<string>(
+    () => (displayMode === 'visible' ? 'w-[500px]' : 'w-0'),
     [displayMode],
   );
 
-  // We are memoizing the function that needs re-calculation upon change of displayMode.
-  const renderEditPanel = useCallback(() => {
-    return displayMode === 'edit' ? <EditPanel /> : null;
-  }, [displayMode]);
-
   return (
     <>
-      <SectionSelectionCards />
-      <ThemeChangingNavbar />
       <ResumeDataProvider>
-        <div className="flex flex-row w-full items-start justify-center gap-2 px-2 h-full">
-          <div className={`flex flex-col ${resumeWidthClassName} items-center`}>
+        <div className="flex flex-row w-full h-screen px-1">
+          {/* Left Column - Resume Preview */}
+          <div className="flex-1 min-h-screen overflow-auto py-2 flex items-start justify-center transition-all duration-300 bg-[#F2F2F2]">
             <Resume />
           </div>
-          {renderEditPanel()}
+
+          {/* Right Column - Edit Panel (fixed width) */}
+          <div
+            className={`${editPanelWidthClassName} transition-all duration-300 overflow-hidden`}
+          >
+            {displayMode === 'visible' ? <EditPanel /> : null}
+          </div>
+
+          {/* Toggle Button - Show when panel is collapsed */}
+          {displayMode === 'collapsed' ? <EditPanelToggleButton /> : null}
         </div>
         <DownloadButton />
       </ResumeDataProvider>

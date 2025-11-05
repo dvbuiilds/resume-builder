@@ -9,6 +9,24 @@
 
 /* For IE, Edge and Firefox */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
+
+/* Increase font sizes by ~2px when Cormorant Garamond is selected (preview only) */
+.cormorant-scale .text-xs {
+  font-size: 0.875rem;
+  line-height: 1rem;
+} /* was 0.75rem */
+.cormorant-scale .text-sm {
+  font-size: 1rem;
+  line-height: 1.25rem;
+} /* was 0.875rem */
+.cormorant-scale .text-base {
+  font-size: 1.125rem;
+  line-height: 1.25rem;
+} /* was 1rem */
+.cormorant-scale .text-lg {
+  font-size: 1.25rem;
+  line-height: 1.5rem;
+} /* was 1.125rem */

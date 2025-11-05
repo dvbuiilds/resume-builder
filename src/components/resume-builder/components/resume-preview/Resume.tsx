@@ -2,12 +2,7 @@ import React from 'react';
 import { Cormorant_Garamond, Inter } from 'next/font/google';
 
 // THIRD_PARTY
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  type DropResult,
-} from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 // HOOKS
 import { useLayout } from '../../context/LayoutContext';
@@ -95,7 +90,7 @@ export const Resume = () => {
 
   return (
     <div
-      className={`${fontClassName} shadow-md w-3/4 bg-slate-50 mt-2 p-4 flex flex-col`}
+      className={`${fontClassName} shadow-lg w-full bg-white p-4 flex flex-col`}
       style={fontStyle}
     >
       <DragDropContext onDragEnd={onDragEnd}>
