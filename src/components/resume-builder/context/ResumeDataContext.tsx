@@ -44,7 +44,7 @@ const initialResumeData: {
   skills: Skills;
   achievements: Achievements;
 } = {
-  title: 'Enter Your Name',
+  title: 'Your Name',
   socialHandles: [
     { label: 'abc@example.com', link: '#use mailto: in the link' },
     { label: 'LinkedIn', link: '#' },

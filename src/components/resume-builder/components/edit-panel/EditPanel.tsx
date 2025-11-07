@@ -132,8 +132,8 @@ export const EditPanel: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-screen relative px-3 py-2 border border-gray-200 rounded-md bg-white overflow-y-auto">
-      <div className="flex flex-row items-center justify-between mb-4 sticky top-0 bg-white z-10 pb-2">
+    <div className="w-full h-screen relative px-3 py-2 border border-gray-200 rounded-md bg-white overflow-y-auto scrollbar-hide">
+      <div className="flex flex-row items-center justify-between mb-4 sticky top-0 bg-white z-10 pb-2 shadow-sm">
         <p className="font-medium">Edit Panel</p>
         <ButtonWithCrossIcon onClick={closeEditPanel} />
       </div>

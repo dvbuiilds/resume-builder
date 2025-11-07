@@ -10,7 +10,9 @@ describe('ResumeDataContext', () => {
   describe('useResumeData hook', () => {
     it('should throw error when used outside provider', () => {
       // Suppress console.error for this test
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       expect(() => {
         renderHook(() => useResumeData());
@@ -24,7 +26,7 @@ describe('ResumeDataContext', () => {
         wrapper: ResumeDataProvider,
       });
 
-      expect(result.current.title).toBe('Enter Your Name');
+      expect(result.current.title).toBe('Your Name');
       expect(result.current.socialHandles).toHaveLength(2);
       expect(result.current.workExperience.experience).toHaveLength(1);
       expect(result.current.projects.projects).toHaveLength(1);
@@ -72,7 +74,7 @@ describe('ResumeDataContext', () => {
         result.current.updateTitle((prev) => `${prev} - Updated`);
       });
 
-      expect(result.current.title).toBe('Enter Your Name - Updated');
+      expect(result.current.title).toBe('Your Name - Updated');
     });
 
     it('should handle special characters in title', () => {
@@ -81,10 +83,10 @@ describe('ResumeDataContext', () => {
       });
 
       act(() => {
-        result.current.updateTitle('Dr. John O\'Reilly-Smith, Jr.');
+        result.current.updateTitle("Dr. John O'Reilly-Smith, Jr.");
       });
 
-      expect(result.current.title).toBe('Dr. John O\'Reilly-Smith, Jr.');
+      expect(result.current.title).toBe("Dr. John O'Reilly-Smith, Jr.");
     });
   });
 
@@ -193,7 +195,9 @@ describe('ResumeDataContext', () => {
       });
 
       expect(result.current.projects.projects).toHaveLength(1);
-      expect(result.current.projects.projects[0].projectTitle).toBe('New Project');
+      expect(result.current.projects.projects[0].projectTitle).toBe(
+        'New Project',
+      );
     });
   });
 
@@ -322,4 +326,3 @@ describe('ResumeDataContext', () => {
     });
   });
 });
-

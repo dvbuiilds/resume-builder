@@ -114,7 +114,7 @@ const initialResumeData: Pick<
   | 'skills'
   | 'achievements'
 > = {
-  title: 'Enter Your Name',
+  title: 'Your Name',
   socialHandles: [
     { label: 'abc@example.com', link: '#use mailto: in the link' },
     { label: 'LinkedIn', link: '#' },
