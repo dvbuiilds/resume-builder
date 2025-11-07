@@ -2,7 +2,6 @@
 import React, { useMemo } from 'react';
 
 // PROVIDERS
-import { ResumeDataProvider } from './context/ResumeDataContext';
 import { LayoutProvider, useLayout } from './context/LayoutContext';
 
 // COMPONENTS
@@ -34,25 +33,23 @@ export const ResumeBuilder: React.FC = () => {
 
   return (
     <>
-      <ResumeDataProvider>
-        <div className="flex flex-row w-full h-screen px-1">
-          {/* Left Column - Edit Panel (fixed width) */}
-          <div
-            className={`${editPanelWidthClassName} transition-all duration-300 overflow-hidden`}
-          >
-            {displayMode === 'visible' ? <EditPanel /> : null}
-          </div>
-
-          {/* Toggle Button - Show when panel is collapsed (left edge) */}
-          {displayMode === 'collapsed' ? <EditPanelToggleButton /> : null}
-
-          {/* Right Column - Resume Preview */}
-          <div className="flex-1 min-h-screen overflow-auto py-2 px-4 flex items-start justify-center transition-all duration-300 bg-[#F2F2F2]">
-            <Resume />
-          </div>
+      <div className="flex flex-row w-full h-screen px-1">
+        {/* Left Column - Edit Panel (fixed width) */}
+        <div
+          className={`${editPanelWidthClassName} transition-all duration-300 overflow-hidden`}
+        >
+          {displayMode === 'visible' ? <EditPanel /> : null}
         </div>
-        <DownloadButton />
-      </ResumeDataProvider>
+
+        {/* Toggle Button - Show when panel is collapsed (left edge) */}
+        {displayMode === 'collapsed' ? <EditPanelToggleButton /> : null}
+
+        {/* Right Column - Resume Preview */}
+        <div className="flex-1 min-h-screen overflow-auto py-2 px-4 flex items-start justify-center transition-all duration-300 bg-[#F2F2F2]">
+          <Resume />
+        </div>
+      </div>
+      <DownloadButton />
     </>
   );
 };

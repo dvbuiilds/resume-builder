@@ -4,14 +4,14 @@ import React from 'react';
 import { HorizontalRule } from './HorizontalRule';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 // TYPES
 import type { Course } from '../../types/resume-data';
 
 export const Education: React.FC = () => {
-  const { education } = useResumeData();
+  const education = useResumeStore((s) => s.education);
   const { color } = useResumeTheme();
 
   return (

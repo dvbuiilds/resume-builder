@@ -1,18 +1,19 @@
 import React from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 
 // COMPONENTS
 import { InputField } from './EditPanelComponents';
 
 export const TitleEditBox = () => {
-  const { title, updateTitle } = useResumeData();
+  const title = useResumeStore((s) => s.title);
+  const setTitle = useResumeStore((s) => s.setTitle);
 
   return (
     <InputField
       value={title}
-      onChange={(event) => updateTitle(event.target.value)}
+      onChange={(event) => setTitle(event.target.value)}
     />
   );
 };

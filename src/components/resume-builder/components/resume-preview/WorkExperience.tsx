@@ -7,11 +7,11 @@ import type { Experience } from '../../types/resume-data';
 import { HorizontalRule } from './HorizontalRule';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 export const WorkExperience: React.FC = () => {
-  const { workExperience } = useResumeData();
+  const workExperience = useResumeStore((s) => s.workExperience);
   const { color } = useResumeTheme();
 
   return (

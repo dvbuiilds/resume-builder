@@ -1,7 +1,7 @@
 import React from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 
 // COMPONENTS
 import {
@@ -14,10 +14,14 @@ import {
 import type { AchievementItem } from '../../types/resume-data';
 
 export const AchievementsEditBox: React.FC = () => {
-  const { achievements, updateAchievements } = useResumeData();
+  const achievements = useResumeStore((s) => s.achievements);
+  const setAchievementsTitle = useResumeStore((s) => s.setAchievementsTitle);
+  const addAchievement = useResumeStore((s) => s.addAchievement);
+  const updateAchievement = useResumeStore((s) => s.updateAchievement);
+  const removeAchievement = useResumeStore((s) => s.removeAchievement);
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateAchievements((prev) => ({ ...prev, title: event.target.value }));
+    setAchievementsTitle(event.target.value);
   };
 
   const handleAchievementChange = (
@@ -25,27 +29,11 @@ export const AchievementsEditBox: React.FC = () => {
     field: keyof AchievementItem,
     value: string,
   ) => {
-    updateAchievements((prev) => {
-      const updatedAchievementList = [...prev.achievementList];
-      updatedAchievementList[index] = {
-        ...updatedAchievementList[index],
-        [field]: value,
-      };
-      return { ...prev, achievementList: updatedAchievementList };
-    });
+    updateAchievement(index, { [field]: value } as any);
   };
 
   const addNewAchievement = () => {
-    const newAchievement: AchievementItem = {
-      awardName: '',
-      institutionName: '',
-      dateAwarded: '',
-      description: '',
-    };
-    updateAchievements((prev) => ({
-      ...prev,
-      achievementList: [...prev.achievementList, newAchievement],
-    }));
+    addAchievement();
   };
 
   const deleteAchievement = (index: number) => {
@@ -53,10 +41,7 @@ export const AchievementsEditBox: React.FC = () => {
       alert('At least one achievement item is required.');
       return;
     }
-    updateAchievements((prev) => ({
-      ...prev,
-      achievementList: prev.achievementList.filter((_, i) => i !== index),
-    }));
+    removeAchievement(index);
   };
 
   return (

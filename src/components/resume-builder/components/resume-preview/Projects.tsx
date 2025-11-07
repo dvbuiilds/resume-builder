@@ -7,11 +7,11 @@ import { HorizontalRule } from './HorizontalRule';
 import type { Project } from '../../types/resume-data';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 export const Projects: React.FC = () => {
-  const { projects } = useResumeData();
+  const projects = useResumeStore((s) => s.projects);
   const { color } = useResumeTheme();
 
   return (

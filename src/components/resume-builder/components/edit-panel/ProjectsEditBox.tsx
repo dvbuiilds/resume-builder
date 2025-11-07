@@ -1,10 +1,14 @@
 import React from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
+import type {
+  Projects as ProjectsType,
+  Project,
+} from '../../types/resume-data';
 
 // COMPONENTS
-import { Experience, Project } from '../../types/resume-data';
+import { Experience } from '../../types/resume-data';
 import {
   BlueButton,
   ButtonWithCrossIcon,
@@ -13,10 +17,21 @@ import {
 } from './EditPanelComponents';
 
 export const ProjectsEditBox: React.FC = () => {
-  const { projects, updateProjects } = useResumeData();
+  const projects = useResumeStore((s) => s.projects);
+  const setProjectsTitle = useResumeStore((s) => s.setProjectsTitle);
+  const addProject = useResumeStore((s) => s.addProject);
+  const updateProject = useResumeStore((s) => s.updateProject);
+  const removeProject = useResumeStore((s) => s.removeProject);
+  const addProjectDescription = useResumeStore((s) => s.addProjectDescription);
+  const updateProjectDescription = useResumeStore(
+    (s) => s.updateProjectDescription,
+  );
+  const removeProjectDescription = useResumeStore(
+    (s) => s.removeProjectDescription,
+  );
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateProjects((prev) => ({ ...prev, title: event.target.value }));
+    setProjectsTitle(event.target.value);
   };
 
   const handleExperienceChange = (
@@ -24,14 +39,7 @@ export const ProjectsEditBox: React.FC = () => {
     field: keyof Experience,
     value: string,
   ) => {
-    updateProjects((prev) => {
-      const updatedProjectsArray = [...prev.projects];
-      updatedProjectsArray[index] = {
-        ...updatedProjectsArray[index],
-        [field]: value,
-      };
-      return { ...prev, projects: updatedProjectsArray };
-    });
+    updateProject(index, { [field]: value } as any);
   };
 
   const handleDescriptionChange = (
@@ -39,33 +47,11 @@ export const ProjectsEditBox: React.FC = () => {
     descIndex: number,
     value: string,
   ) => {
-    updateProjects((prev) => {
-      const updatedProjectsArray = [...prev.projects];
-      const updatedDescription = [
-        ...updatedProjectsArray[projIndex].description,
-      ];
-      updatedDescription[descIndex] = value;
-      updatedProjectsArray[projIndex] = {
-        ...updatedProjectsArray[projIndex],
-        description: updatedDescription,
-      };
-
-      return { ...prev, projects: updatedProjectsArray };
-    });
+    updateProjectDescription(projIndex, descIndex, value);
   };
 
   const addNewProject = () => {
-    const newProject: Project = {
-      organizationName: '',
-      projectTitle: '',
-      startDate: '',
-      endDate: '',
-      description: [''],
-    };
-    updateProjects((prev) => {
-      const updatedProjects = prev.projects.concat(newProject);
-      return { ...prev, projects: updatedProjects };
-    });
+    addProject();
   };
 
   const deleteProject = (projIndex: number) => {
@@ -73,27 +59,11 @@ export const ProjectsEditBox: React.FC = () => {
       alert('Minimum 1 Work Experience is needed!');
       return;
     }
-    updateProjects((prev) => {
-      const updatedProjectsArray = prev.projects.filter(
-        (_, index) => index !== projIndex,
-      );
-      return { ...prev, projects: updatedProjectsArray };
-    });
+    removeProject(projIndex);
   };
 
   const addNewDescription = (projIndex: number) => {
-    updateProjects((prev) => {
-      const updatedProjectsArray = prev.projects.map((project, index) => {
-        if (index === projIndex) {
-          return {
-            ...project,
-            description: [...project.description, ''],
-          };
-        }
-        return project;
-      });
-      return { ...prev, projects: updatedProjectsArray };
-    });
+    addProjectDescription(projIndex);
   };
 
   const deleteDescription = (projIndex: number, descIndex: number) => {
@@ -101,22 +71,7 @@ export const ProjectsEditBox: React.FC = () => {
       alert('Atleast one description is needed for project.');
       return;
     }
-    updateProjects((prev) => {
-      const selectedProject = prev.projects[projIndex];
-      const updatedDescriptions = selectedProject.description.filter(
-        (_, index) => descIndex !== index,
-      );
-      const updatedProjects = prev.projects.map((proj, index) => {
-        if (projIndex === index) {
-          return {
-            ...proj,
-            description: updatedDescriptions,
-          };
-        }
-        return proj;
-      });
-      return { ...prev, projects: updatedProjects };
-    });
+    removeProjectDescription(projIndex, descIndex);
   };
 
   return (
@@ -128,7 +83,7 @@ export const ProjectsEditBox: React.FC = () => {
         placeholder="Work Experience Title"
       />
 
-      {projects.projects.map((project, projIndex) => (
+      {projects.projects.map((project: Project, projIndex: number) => (
         <ProjectEditBox
           key={`projectsEditBox_${projIndex}`}
           index={projIndex}

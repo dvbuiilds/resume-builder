@@ -1,7 +1,7 @@
 import React from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 
 // COMPONENTS
 import { ActivityItem } from '../../types/resume-data';
@@ -13,10 +13,23 @@ import {
 } from './EditPanelComponents';
 
 export const ActivitiesEditBox: React.FC = () => {
-  const { activities, updateActivities } = useResumeData();
+  const activities = useResumeStore((s) => s.activities);
+  const setActivitiesTitle = useResumeStore((s) => s.setActivitiesTitle);
+  const addActivity = useResumeStore((s) => s.addActivity);
+  const updateActivity = useResumeStore((s) => s.updateActivity);
+  const removeActivity = useResumeStore((s) => s.removeActivity);
+  const addActivityDescription = useResumeStore(
+    (s) => s.addActivityDescription,
+  );
+  const updateActivityDescription = useResumeStore(
+    (s) => s.updateActivityDescription,
+  );
+  const removeActivityDescription = useResumeStore(
+    (s) => s.removeActivityDescription,
+  );
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateActivities((prev) => ({ ...prev, title: event.target.value }));
+    setActivitiesTitle(event.target.value);
   };
 
   const handleActivityChange = (
@@ -24,14 +37,7 @@ export const ActivitiesEditBox: React.FC = () => {
     field: keyof ActivityItem,
     value: string,
   ) => {
-    updateActivities((prev) => {
-      const updatedActivitiesArray = [...prev.activities];
-      updatedActivitiesArray[index] = {
-        ...updatedActivitiesArray[index],
-        [field]: value,
-      };
-      return { ...prev, activities: updatedActivitiesArray };
-    });
+    updateActivity(index, { [field]: value } as any);
   };
 
   const handleDescriptionChange = (
@@ -39,33 +45,11 @@ export const ActivitiesEditBox: React.FC = () => {
     descIndex: number,
     value: string,
   ) => {
-    updateActivities((prev) => {
-      const updatedActivitiesArray = [...prev.activities];
-      const updatedDescriptions = [
-        ...updatedActivitiesArray[activityIndex].descriptions,
-      ];
-      updatedDescriptions[descIndex] = value;
-      updatedActivitiesArray[activityIndex] = {
-        ...updatedActivitiesArray[activityIndex],
-        descriptions: updatedDescriptions,
-      };
-
-      return { ...prev, activities: updatedActivitiesArray };
-    });
+    updateActivityDescription(activityIndex, descIndex, value);
   };
 
   const addNewActivity = () => {
-    const newActivity: ActivityItem = {
-      activityTitle: '',
-      institutionName: '',
-      startDate: '',
-      endDate: '',
-      descriptions: [''],
-    };
-    updateActivities((prev) => {
-      const updatedActivities = prev.activities.concat(newActivity);
-      return { ...prev, activities: updatedActivities };
-    });
+    addActivity();
   };
 
   const deleteActivity = (activityIndex: number) => {
@@ -73,27 +57,11 @@ export const ActivitiesEditBox: React.FC = () => {
       alert('Minimum 1 Activity is needed!');
       return;
     }
-    updateActivities((prev) => {
-      const updatedActivitiesArray = prev.activities.filter(
-        (_, index) => index !== activityIndex,
-      );
-      return { ...prev, activities: updatedActivitiesArray };
-    });
+    removeActivity(activityIndex);
   };
 
   const addNewDescription = (activityIndex: number) => {
-    updateActivities((prev) => {
-      const updatedActivitiesArray = prev.activities.map((activity, index) => {
-        if (index === activityIndex) {
-          return {
-            ...activity,
-            descriptions: [...activity.descriptions, ''],
-          };
-        }
-        return activity;
-      });
-      return { ...prev, activities: updatedActivitiesArray };
-    });
+    addActivityDescription(activityIndex);
   };
 
   const deleteDescription = (activityIndex: number, descIndex: number) => {
@@ -101,22 +69,7 @@ export const ActivitiesEditBox: React.FC = () => {
       alert('At least one description is needed for an activity.');
       return;
     }
-    updateActivities((prev) => {
-      const selectedActivity = prev.activities[activityIndex];
-      const updatedDescriptions = selectedActivity.descriptions.filter(
-        (_, index) => descIndex !== index,
-      );
-      const updatedActivities = prev.activities.map((activity, index) => {
-        if (activityIndex === index) {
-          return {
-            ...activity,
-            descriptions: updatedDescriptions,
-          };
-        }
-        return activity;
-      });
-      return { ...prev, activities: updatedActivities };
-    });
+    removeActivityDescription(activityIndex, descIndex);
   };
 
   return (

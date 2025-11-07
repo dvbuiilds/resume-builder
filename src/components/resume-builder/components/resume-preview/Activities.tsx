@@ -7,11 +7,11 @@ import { HorizontalRule } from './HorizontalRule';
 import type { ActivityItem } from '../../types/resume-data';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 export const Activities = () => {
-  const { activities } = useResumeData();
+  const activities = useResumeStore((s) => s.activities);
   const { color } = useResumeTheme();
 
   return (

@@ -1,13 +1,13 @@
 import React from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 
 // TYPES
 import type { SocialHandle } from '../../types/resume-data';
 
 export const SocialHandles: React.FC = () => {
-  const { socialHandles } = useResumeData();
+  const socialHandles = useResumeStore((s) => s.socialHandles);
   return (
     <div className="flex flex-row items-center justify-around">
       {socialHandles.map((socialHandle, index) => (

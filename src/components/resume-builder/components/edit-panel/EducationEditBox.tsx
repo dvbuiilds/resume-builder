@@ -1,7 +1,7 @@
 import React from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 
 // COMPONENTS
 import { Course } from '../../types/resume-data';
@@ -12,10 +12,14 @@ import {
 } from './EditPanelComponents';
 
 export const EducationEditBox: React.FC = () => {
-  const { education, updateEducation } = useResumeData();
+  const education = useResumeStore((s) => s.education);
+  const setEducationTitle = useResumeStore((s) => s.setEducationTitle);
+  const addCourse = useResumeStore((s) => s.addCourse);
+  const updateCourse = useResumeStore((s) => s.updateCourse);
+  const removeCourse = useResumeStore((s) => s.removeCourse);
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateEducation((prev) => ({ ...prev, title: event.target.value }));
+    setEducationTitle(event.target.value);
   };
 
   const handleCourseChange = (
@@ -23,29 +27,11 @@ export const EducationEditBox: React.FC = () => {
     field: keyof Course,
     value: string,
   ) => {
-    updateEducation((prev) => {
-      const updatedCoursesArray = [...prev.courses];
-      updatedCoursesArray[index] = {
-        ...updatedCoursesArray[index],
-        [field]: value,
-      };
-      return { ...prev, courses: updatedCoursesArray };
-    });
+    updateCourse(index, { [field]: value } as any);
   };
 
   const addNewCourse = () => {
-    const newCourse: Course = {
-      courseName: '',
-      institutionName: '',
-      startDate: '',
-      endDate: '',
-      scoreEarned: '',
-      description: '',
-    };
-    updateEducation((prev) => {
-      const updatedCourses = prev.courses.concat(newCourse);
-      return { ...prev, courses: updatedCourses };
-    });
+    addCourse();
   };
 
   const deleteCourse = (courseIndex: number) => {
@@ -53,12 +39,7 @@ export const EducationEditBox: React.FC = () => {
       alert('Minimum 1 Education entry is needed!');
       return;
     }
-    updateEducation((prev) => {
-      const updatedCoursesArray = prev.courses.filter(
-        (_, index) => index !== courseIndex,
-      );
-      return { ...prev, courses: updatedCoursesArray };
-    });
+    removeCourse(courseIndex);
   };
 
   return (

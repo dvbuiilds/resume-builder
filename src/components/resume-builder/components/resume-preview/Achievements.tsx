@@ -7,11 +7,11 @@ import { HorizontalRule } from './HorizontalRule';
 import type { AchievementItem } from '../../types/resume-data';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 export const Achievements: React.FC = () => {
-  const { achievements } = useResumeData();
+  const achievements = useResumeStore((s) => s.achievements);
   const { color } = useResumeTheme();
 
   return (

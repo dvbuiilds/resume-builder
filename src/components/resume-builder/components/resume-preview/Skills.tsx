@@ -7,11 +7,11 @@ import { HorizontalRule } from './HorizontalRule';
 import type { SkillSetItem } from '../../types/resume-data';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 export const Skills: React.FC = () => {
-  const { skills } = useResumeData();
+  const skills = useResumeStore((s) => s.skills);
   const { color } = useResumeTheme();
 
   return (
