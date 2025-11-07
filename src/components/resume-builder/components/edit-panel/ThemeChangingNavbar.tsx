@@ -1,13 +1,16 @@
 import React from 'react';
 
 // HOOKS
-import { useResumeTheme } from './context/ResumeThemeContext';
+import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 // TYPES
-import type { ThemeColorKeys, ThemeFontKeys } from './types/theme';
+import type { ThemeColorKeys, ThemeFontKeys } from '../../types/theme';
 
 // CONFIGS
-import { themeColorsReadOnly, themeFontsReadOnly } from './config/theme-config';
+import {
+  themeColorsReadOnly,
+  themeFontsReadOnly,
+} from '../../config/theme-config';
 
 /**
  *
