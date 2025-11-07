@@ -35,8 +35,8 @@ const cormorantGaramond = Cormorant_Garamond({
 const inter = Inter({ subsets: ['latin'] });
 
 const A4_SHEET_CONFIG = {
-  width: '595px',
-  height: '842px',
+  width: 595,
+  height: 842,
 };
 
 const renderSection = (sectionName: ActiveSectionName) => {
@@ -91,7 +91,12 @@ export const Resume = () => {
   return (
     <div
       className={`${fontClassName} shadow-lg bg-white p-4 flex flex-col`}
-      style={{ ...fontStyle, width: A4_SHEET_CONFIG.width }}
+      style={{
+        ...fontStyle,
+        width: A4_SHEET_CONFIG.width,
+        scale: 1.2,
+        marginTop: 100,
+      }}
     >
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="list">

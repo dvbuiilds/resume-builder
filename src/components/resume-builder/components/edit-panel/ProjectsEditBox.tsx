@@ -129,7 +129,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
   deleteDescription,
 }) => {
   return (
-    <div className="p-1 border rounded relative flex flex-col gap-1">
+    <div className="p-2 rounded relative flex flex-col gap-2 bg-gray-50">
       <div className="flex flex-row items-center justify-between">
         <p className="text-xs font-medium">{`Project #${index + 1}`}</p>
         <ButtonWithCrossIcon onClick={() => deleteProject(index)} />

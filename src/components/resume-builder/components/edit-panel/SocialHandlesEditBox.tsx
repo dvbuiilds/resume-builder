@@ -134,14 +134,14 @@ const SocialHandleEditBox: React.FC<{
 }) => {
   return (
     <DraggableWrapper>
-      <div className="flex flex-row justify-between items-center relative">
+      <div className="flex flex-row justify-between pt-1 items-center relative">
         <p className="text-sm">Social Handle #{index + 1}</p>
         <ButtonWithCrossIcon
           onClick={() => deleteSocialHandle(index)}
           disabled={!canDeleteSocialHandles}
         />
       </div>
-      <div className="flex flex-row gap-2 pr-2 items-center">
+      <div className="flex flex-row gap-2 pr-2 py-1 items-center">
         <p className="text-xs">Label</p>
         <InputField
           value={socialHandle.label}
@@ -151,7 +151,7 @@ const SocialHandleEditBox: React.FC<{
           }
         />
       </div>
-      <div className="flex flex-row gap-4 pr-2 items-center">
+      <div className="flex flex-row gap-4 pr-2 pb-1 items-center">
         <p className="text-xs">Link</p>
         <InputField
           value={socialHandle.link}

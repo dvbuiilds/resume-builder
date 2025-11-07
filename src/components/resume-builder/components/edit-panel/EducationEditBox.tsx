@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 // HOOKS
 import { useResumeStore } from '../../store/resumeStore';
@@ -83,21 +83,21 @@ const CourseEditBox: React.FC<CourseEditBoxProps> = ({
   deleteCourse,
 }) => {
   return (
-    <div className="p-1 border rounded relative flex flex-col gap-1">
+    <div className="p-2 rounded relative flex flex-col gap-2 bg-gray-50">
       <div className="flex flex-row items-center justify-between">
         <p className="text-xs font-medium">{`Education #${index + 1}`}</p>
         <ButtonWithCrossIcon onClick={() => deleteCourse(index)} />
       </div>
       <InputField
         value={data.institutionName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleCourseChange(index, 'institutionName', event.target.value)
         }
         placeholder="Institution Name"
       />
       <InputField
         value={data.courseName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleCourseChange(index, 'courseName', event.target.value)
         }
         placeholder="Course Name"
@@ -106,7 +106,7 @@ const CourseEditBox: React.FC<CourseEditBoxProps> = ({
         <InputField
           type="text"
           value={data.startDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleCourseChange(index, 'startDate', event.target.value)
           }
           placeholder="Start Date"
@@ -114,7 +114,7 @@ const CourseEditBox: React.FC<CourseEditBoxProps> = ({
         <InputField
           type="text"
           value={data.endDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleCourseChange(index, 'endDate', event.target.value)
           }
           placeholder="End Date"
@@ -122,14 +122,14 @@ const CourseEditBox: React.FC<CourseEditBoxProps> = ({
       </div>
       <InputField
         value={data.scoreEarned}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleCourseChange(index, 'scoreEarned', event.target.value)
         }
         placeholder="Score Earned"
       />
       <InputField
         value={data.description}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleCourseChange(index, 'description', event.target.value)
         }
         placeholder="Description"

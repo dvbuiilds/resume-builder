@@ -17,10 +17,10 @@ export const AccordionContainer: React.FC<AccordionContainerProps> = ({
   icon,
 }) => {
   return (
-    <div className="rounded-lg mb-3 bg-[#FAFAFA] overflow-hidden">
+    <div className="rounded-lg mb-3 bg-gray-100 overflow-hidden">
       <div
         onClick={onToggle}
-        className="relative flex justify-between items-center p-4 cursor-pointer hover:bg-[#F0F0F0] transition-colors duration-200"
+        className="relative flex justify-between items-center p-4 cursor-pointer hover:bg-gray-200 transition-colors duration-200"
       >
         <div className="flex items-center gap-4">
           {icon && <div className="flex-shrink-0 text-gray-600">{icon}</div>}
@@ -40,7 +40,7 @@ export const AccordionContainer: React.FC<AccordionContainerProps> = ({
         }}
       >
         <div className="overflow-hidden min-h-0">
-          <div className="p-4 pt-0">{children}</div>
+          <div className="p-4">{children}</div>
         </div>
       </div>
     </div>

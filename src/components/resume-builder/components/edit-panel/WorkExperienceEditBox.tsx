@@ -131,7 +131,7 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
   deleteDescription,
 }) => {
   return (
-    <div className="p-2 border rounded relative flex flex-col gap-2">
+    <div className="p-2 rounded relative flex flex-col gap-2 bg-gray-50">
       <div className="flex flex-row items-center justify-between">
         <p className="text-xs font-medium">{`Experience #${index + 1}`}</p>
         <ButtonWithCrossIcon onClick={() => deleteExperience(index)} />

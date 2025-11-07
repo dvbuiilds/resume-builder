@@ -59,7 +59,7 @@ export const SkillsEditBox: React.FC = () => {
       {skills.skillSet.map((skillSet, index) => (
         <div
           key={index}
-          className="p-1 border rounded relative flex flex-col gap-1"
+          className="p-2 rounded relative flex flex-col gap-2 bg-gray-50"
         >
           <div className="flex flex-row items-center justify-between">
             <p className="text-xs font-medium">{`Skill Set #${index + 1}`}</p>
