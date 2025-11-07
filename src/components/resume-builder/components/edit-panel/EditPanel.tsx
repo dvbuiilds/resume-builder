@@ -20,7 +20,7 @@ import { SocialHandlesEditBox } from './SocialHandlesEditBox';
 import { TitleEditBox } from './TitleEditBox';
 import { WorkExperienceEditBox } from './WorkExperienceEditBox';
 import { SectionSelectionCards } from '../../SectionSelectionCards';
-import { ThemeChangingNavbar } from '../../ThemeChangingNavbar';
+import { ThemeChangingNavbar } from './ThemeChangingNavbar';
 
 // TYPES
 import { ActiveSectionName } from '../../types/layout';

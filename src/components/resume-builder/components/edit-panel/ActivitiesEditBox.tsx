@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 // HOOKS
 import { useResumeStore } from '../../store/resumeStore';
@@ -134,14 +134,14 @@ const ActivityEditBox: React.FC<ActivityEditBoxProps> = ({
       </div>
       <InputField
         value={data.activityTitle}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleActivityChange(index, 'activityTitle', event.target.value)
         }
         placeholder="Activity Title"
       />
       <InputField
         value={data.institutionName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleActivityChange(index, 'institutionName', event.target.value)
         }
         placeholder="Institution Name"
@@ -150,7 +150,7 @@ const ActivityEditBox: React.FC<ActivityEditBoxProps> = ({
         <InputField
           type="text"
           value={data.startDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleActivityChange(index, 'startDate', event.target.value)
           }
           placeholder="Start Date"
@@ -158,7 +158,7 @@ const ActivityEditBox: React.FC<ActivityEditBoxProps> = ({
         <InputField
           type="text"
           value={data.endDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleActivityChange(index, 'endDate', event.target.value)
           }
           placeholder="End Date"
@@ -170,10 +170,11 @@ const ActivityEditBox: React.FC<ActivityEditBoxProps> = ({
           <InputField
             type="text"
             value={desc}
-            onChange={(event) =>
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
               handleDescriptionChange(index, descIndex, event.target.value)
             }
             placeholder={`Description #${descIndex + 1}`}
+            isDescriptionField
           />
           <ButtonWithCrossIcon
             onClick={() => deleteDescription(index, descIndex)}

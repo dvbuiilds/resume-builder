@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ChangeEvent } from 'react';
 
 // HOOKS
 import { useResumeStore } from '../../store/resumeStore';
@@ -67,17 +67,18 @@ export const SkillsEditBox: React.FC = () => {
           </div>
           <InputField
             value={skillSet.title}
-            onChange={(e) =>
-              handleSkillSetChange(index, 'title', e.target.value)
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              handleSkillSetChange(index, 'title', event.target.value)
             }
             placeholder="Skill Set Title"
           />
           <InputField
             value={skillSet.skills.join(', ')}
-            onChange={(e) =>
-              handleSkillSetChange(index, 'skills', e.target.value)
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+              handleSkillSetChange(index, 'skills', event.target.value)
             }
             placeholder="Skills (comma-separated)"
+            isDescriptionField
           />
         </div>
       ))}

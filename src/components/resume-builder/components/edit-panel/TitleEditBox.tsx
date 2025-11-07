@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 // HOOKS
 import { useResumeStore } from '../../store/resumeStore';
@@ -13,7 +13,9 @@ export const TitleEditBox = () => {
   return (
     <InputField
       value={title}
-      onChange={(event) => setTitle(event.target.value)}
+      onChange={(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+        setTitle(event.target.value)
+      }
     />
   );
 };

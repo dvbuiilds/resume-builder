@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 // HOOKS
 import { useResumeStore } from '../../store/resumeStore';
@@ -93,31 +93,32 @@ const AchievementEditBox: React.FC<AchievementEditBoxProps> = ({
       </div>
       <InputField
         value={data.awardName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleAchievementChange(index, 'awardName', event.target.value)
         }
         placeholder="Award Name"
       />
       <InputField
         value={data.institutionName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleAchievementChange(index, 'institutionName', event.target.value)
         }
         placeholder="Institution Name"
       />
       <InputField
         value={data.dateAwarded}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleAchievementChange(index, 'dateAwarded', event.target.value)
         }
         placeholder="Date Awarded"
       />
       <InputField
         value={data.description}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
           handleAchievementChange(index, 'description', event.target.value)
         }
         placeholder="Description"
+        isDescriptionField
       />
     </div>
   );

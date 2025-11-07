@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { ChangeEvent, useMemo } from 'react';
 
 // THIRD_PARTY
 import {
@@ -146,7 +146,9 @@ const SocialHandleEditBox: React.FC<{
         <InputField
           value={socialHandle.label}
           name={'label'}
-          onChange={(event) => onChangeHandler(event, index)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            onChangeHandler(event, index)
+          }
         />
       </div>
       <div className="flex flex-row gap-4 pr-2 items-center">
@@ -154,7 +156,9 @@ const SocialHandleEditBox: React.FC<{
         <InputField
           value={socialHandle.link}
           name={'link'}
-          onChange={(event) => onChangeHandler(event, index)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            onChangeHandler(event, index)
+          }
         />
       </div>
     </DraggableWrapper>

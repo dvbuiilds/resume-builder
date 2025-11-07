@@ -1,20 +1,47 @@
-import React from 'react';
+import React, { type FocusEventHandler, type ChangeEventHandler } from 'react';
 import { FaPlus } from 'react-icons/fa';
 
-interface InputFieldProps extends React.ComponentProps<'input'> {}
+interface InputFieldProps
+  extends Omit<React.ComponentProps<'input'>, 'onChange' | 'onBlur'> {
+  isDescriptionField?: boolean;
+  onChange?:
+    | ChangeEventHandler<HTMLInputElement>
+    | ChangeEventHandler<HTMLTextAreaElement>;
+  onBlur?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
+}
+
 export const InputField: React.FC<InputFieldProps> = ({
   value,
   onChange,
   onBlur,
   className,
+  isDescriptionField = false,
   ...otherInputProps
 }) => {
+  const baseClassName = 'w-full rounded-md text-xs p-2 font-light';
+
+  if (isDescriptionField) {
+    return (
+      <textarea
+        value={value}
+        onChange={onChange as ChangeEventHandler<HTMLTextAreaElement>}
+        onBlur={onBlur}
+        className={`${baseClassName} resize-none ${className || ''}`}
+        style={{ minHeight: '48px' }}
+        {...(otherInputProps as Omit<
+          React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+          'onChange' | 'onBlur'
+        >)}
+      />
+    );
+  }
+
   return (
     <input
       value={value}
-      onChange={onChange}
+      onChange={onChange as ChangeEventHandler<HTMLInputElement>}
       onBlur={onBlur}
-      className={`w-full rounded-md text-xs p-2 font-light mt-1 ${className}`}
+      className={`${baseClassName} ${className || ''}`}
       {...otherInputProps}
     />
   );

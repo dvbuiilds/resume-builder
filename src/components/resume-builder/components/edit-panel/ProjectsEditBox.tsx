@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ChangeEvent } from 'react';
 
 // HOOKS
 import { useResumeStore } from '../../store/resumeStore';
@@ -136,7 +136,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
       </div>
       <InputField
         value={data.organizationName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleExperienceChange(index, 'companyName', event.target.value)
         }
         placeholder="Company Name"
@@ -144,7 +144,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
       <InputField
         type="text"
         value={data.projectTitle}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleExperienceChange(index, 'jobTitle', event.target.value)
         }
         placeholder="Project Title"
@@ -153,7 +153,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
         <InputField
           type="text"
           value={data.startDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleExperienceChange(index, 'startDate', event.target.value)
           }
           placeholder="Start Date"
@@ -161,7 +161,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
         <InputField
           type="text"
           value={data.endDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleExperienceChange(index, 'endDate', event.target.value)
           }
           placeholder="End Date"
@@ -173,10 +173,11 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
           <InputField
             type="text"
             value={desc}
-            onChange={(event) =>
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
               handleDescriptionChange(index, descIndex, event.target.value)
             }
             placeholder={`Description #${descIndex}`}
+            isDescriptionField
           />
           <ButtonWithCrossIcon
             onClick={() => deleteDescription(index, descIndex)}

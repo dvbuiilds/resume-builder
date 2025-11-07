@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 // HOOKS
 import { useResumeStore } from '../../store/resumeStore';
@@ -131,14 +131,14 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
   deleteDescription,
 }) => {
   return (
-    <div className="p-1 border rounded relative flex flex-col gap-1">
+    <div className="p-2 border rounded relative flex flex-col gap-2">
       <div className="flex flex-row items-center justify-between">
         <p className="text-xs font-medium">{`Experience #${index + 1}`}</p>
         <ButtonWithCrossIcon onClick={() => deleteExperience(index)} />
       </div>
       <InputField
         value={data.companyName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleExperienceChange(index, 'companyName', event.target.value)
         }
         placeholder="Company Name"
@@ -146,7 +146,7 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
       <InputField
         type="text"
         value={data.jobTitle}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleExperienceChange(index, 'jobTitle', event.target.value)
         }
         placeholder="Job Title"
@@ -155,7 +155,7 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
         <InputField
           type="text"
           value={data.startDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleExperienceChange(index, 'startDate', event.target.value)
           }
           placeholder="Start Date"
@@ -163,7 +163,7 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
         <InputField
           type="text"
           value={data.endDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleExperienceChange(index, 'endDate', event.target.value)
           }
           placeholder="End Date"
@@ -175,10 +175,11 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
           <InputField
             type="text"
             value={desc}
-            onChange={(event) =>
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
               handleDescriptionChange(index, descIndex, event.target.value)
             }
             placeholder={`Description #${descIndex}`}
+            isDescriptionField
           />
           <ButtonWithCrossIcon
             onClick={() => deleteDescription(index, descIndex)}
