@@ -135,7 +135,7 @@ const SocialHandleEditBox: React.FC<{
   return (
     <DraggableWrapper>
       <div className="flex flex-row justify-between items-center relative">
-        <p className="text-sm">Social Handle #{index}</p>
+        <p className="text-sm">Social Handle #{index + 1}</p>
         <ButtonWithCrossIcon
           onClick={() => deleteSocialHandle(index)}
           disabled={!canDeleteSocialHandles}

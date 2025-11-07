@@ -80,7 +80,7 @@ export const ProjectsEditBox: React.FC = () => {
         type="text"
         value={projects.title}
         onChange={handleTitleChange}
-        placeholder="Work Experience Title"
+        placeholder="Project Title"
       />
 
       {projects.projects.map((project: Project, projIndex: number) => (
@@ -131,7 +131,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
   return (
     <div className="p-1 border rounded relative flex flex-col gap-1">
       <div className="flex flex-row items-center justify-between">
-        <p className="text-xs font-medium">{`Experience #${index}`}</p>
+        <p className="text-xs font-medium">{`Project #${index + 1}`}</p>
         <ButtonWithCrossIcon onClick={() => deleteProject(index)} />
       </div>
       <InputField
@@ -147,7 +147,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
         onChange={(event) =>
           handleExperienceChange(index, 'jobTitle', event.target.value)
         }
-        placeholder="Job Title"
+        placeholder="Project Title"
       />
       <div className="flex gap-2">
         <InputField
