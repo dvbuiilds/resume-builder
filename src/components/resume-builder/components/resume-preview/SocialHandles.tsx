@@ -23,7 +23,12 @@ export const SocialHandles: React.FC = () => {
 
 const SocialHandle: React.FC<SocialHandle> = (props) => {
   return (
-    <a className="text-center text-xs" href={props.link}>
+    <a
+      className="text-center text-xs underline"
+      href={props.link}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       {props.label}
     </a>
   );

@@ -55,6 +55,7 @@ export const usePDFStyles = (
       fontWeight: 700,
       textAlign: 'center',
       marginBottom: 4,
+      color,
     },
     subtitle: {
       fontSize: textSize,
@@ -63,7 +64,7 @@ export const usePDFStyles = (
     },
     link: {
       color,
-      textDecoration: 'none',
+      textDecoration: 'underline',
       fontSize: textSize,
     },
     horizontalRule: {
