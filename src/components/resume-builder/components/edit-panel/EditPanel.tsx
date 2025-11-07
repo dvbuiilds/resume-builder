@@ -1,4 +1,14 @@
 import React from 'react';
+import {
+  MdOutlineTitle,
+  MdOutlineWorkOutline,
+  MdOutlineLink,
+  MdOutlineSchool,
+  MdOutlineFolderSpecial,
+  MdOutlineEmojiEvents,
+  MdOutlineDirectionsRun,
+  MdOutlineExtension,
+} from 'react-icons/md';
 
 // HOOKS
 import { useLayout } from '../../context/LayoutContext';
@@ -26,36 +36,87 @@ import {
   SectionIdTitleMapping,
 } from '../../config/section-name-config';
 
-const renderSection = (sectionName: ActiveSectionName) => {
+const getSectionIcon = (sectionName: ActiveSectionName) => {
+  switch (sectionName) {
+    case SectionNameMapping.TITLE:
+      return <MdOutlineTitle />;
+    case SectionNameMapping.WORK_EXPERIENCE:
+      return <MdOutlineWorkOutline />;
+    case SectionNameMapping.SOCIAL_HANDLES:
+      return <MdOutlineLink />;
+    case SectionNameMapping.EDUCATION:
+      return <MdOutlineSchool />;
+    case SectionNameMapping.PROJECTS:
+      return <MdOutlineFolderSpecial />;
+    case SectionNameMapping.ACHIEVEMENTS:
+      return <MdOutlineEmojiEvents />;
+    case SectionNameMapping.ACTIVITIES:
+      return <MdOutlineDirectionsRun />;
+    case SectionNameMapping.SKILLS:
+      return <MdOutlineExtension />;
+    default:
+      return null;
+  }
+};
+
+const renderSection = (
+  sectionName: ActiveSectionName,
+  isOpen: boolean,
+  onToggle: () => void,
+) => {
+  const icon = getSectionIcon(sectionName);
+  const title = SectionIdTitleMapping[sectionName];
+
+  let content: React.ReactNode;
   switch (sectionName) {
     case SectionNameMapping.TITLE: {
-      return <TitleEditBox />;
+      content = <TitleEditBox />;
+      break;
     }
     case SectionNameMapping.SOCIAL_HANDLES: {
-      return <SocialHandlesEditBox />;
+      content = <SocialHandlesEditBox />;
+      break;
     }
     case SectionNameMapping.WORK_EXPERIENCE: {
-      return <WorkExperienceEditBox />;
+      content = <WorkExperienceEditBox />;
+      break;
     }
     case SectionNameMapping.PROJECTS: {
-      return <ProjectsEditBox />;
+      content = <ProjectsEditBox />;
+      break;
     }
     case SectionNameMapping.EDUCATION: {
-      return <EducationEditBox />;
+      content = <EducationEditBox />;
+      break;
     }
     case SectionNameMapping.ACTIVITIES: {
-      return <ActivitiesEditBox />;
+      content = <ActivitiesEditBox />;
+      break;
     }
     case SectionNameMapping.SKILLS: {
-      return <SkillsEditBox />;
+      content = <SkillsEditBox />;
+      break;
     }
     case SectionNameMapping.ACHIEVEMENTS: {
-      return <AchievementsEditBox />;
+      content = <AchievementsEditBox />;
+      break;
     }
     default: {
-      return;
+      return null;
     }
   }
+
+  return (
+    <AccordionContainer
+      key={`${sectionName}_editBox`}
+      title={title}
+      icon={icon}
+      isOpen={isOpen}
+      onToggle={onToggle}
+    >
+      {content}
+    </AccordionContainer>
+  );
 };
 
 export const EditPanel: React.FC = () => {
@@ -69,20 +130,6 @@ export const EditPanel: React.FC = () => {
       updateActiveSection(sectionName);
     }
   };
-
-  const renderEditSections = () =>
-    sectionsOrder.map((sectionName) => {
-      return (
-        <AccordionContainer
-          key={`${sectionName}_editBox`}
-          title={SectionIdTitleMapping[sectionName]}
-          isOpen={activeSection === sectionName}
-          onToggle={() => onTabClick(sectionName)}
-        >
-          {renderSection(sectionName)}
-        </AccordionContainer>
-      );
-    });
 
   return (
     <div className="w-full h-screen relative px-3 py-2 border border-gray-200 rounded-md bg-white overflow-y-auto">
@@ -106,7 +153,11 @@ export const EditPanel: React.FC = () => {
       {/* Edit Sections */}
       <div>
         <h3 className="text-sm font-medium mb-3 text-gray-700">Content</h3>
-        {renderEditSections()}
+        {sectionsOrder.map((sectionName) =>
+          renderSection(sectionName, activeSection === sectionName, () =>
+            onTabClick(sectionName),
+          ),
+        )}
       </div>
     </div>
   );

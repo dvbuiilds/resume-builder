@@ -1,36 +1,48 @@
-import React, { useCallback } from 'react';
-import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import React from 'react';
+import { FiChevronDown } from 'react-icons/fi';
 
 interface AccordionContainerProps {
   title: string;
   isOpen: boolean;
   onToggle: () => void;
   children: React.ReactNode;
+  icon?: React.ReactNode;
 }
+
 export const AccordionContainer: React.FC<AccordionContainerProps> = ({
   title,
   isOpen,
   onToggle,
   children,
+  icon,
 }) => {
-  const renderChevronIcon = useCallback(() => {
-    return isOpen ? (
-      <FiChevronUp className="text-gray-500" />
-    ) : (
-      <FiChevronDown className="text-gray-500" />
-    );
-  }, [isOpen]);
-
   return (
-    <div className="border border-gray-300 rounded-md mb-2">
+    <div className="rounded-lg mb-3 bg-[#FAFAFA] overflow-hidden">
       <div
         onClick={onToggle}
-        className="relative flex justify-between items-center p-1"
+        className="relative flex justify-between items-center p-4 cursor-pointer hover:bg-[#F0F0F0] transition-colors duration-200"
       >
-        <h2 className="text-sm font-semibold">{title}</h2>
-        {renderChevronIcon()}
+        <div className="flex items-center gap-4">
+          {icon && <div className="flex-shrink-0 text-gray-600">{icon}</div>}
+          <h2 className="text-base font-semibold text-gray-800">{title}</h2>
+        </div>
+        <FiChevronDown
+          className={`text-gray-600 flex-shrink-0 transition-transform duration-300 ${
+            isOpen ? 'rotate-180' : 'rotate-0'
+          }`}
+          size={20}
+        />
       </div>
-      <div className={`${isOpen ? 'block' : 'hidden'} p-1`}>{children}</div>
+      <div
+        className="grid transition-all duration-300 ease-in-out"
+        style={{
+          gridTemplateRows: isOpen ? '1fr' : '0fr',
+        }}
+      >
+        <div className="overflow-hidden min-h-0">
+          <div className="p-4 pt-0">{children}</div>
+        </div>
+      </div>
     </div>
   );
 };
