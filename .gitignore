@@ -3,3 +3,7 @@
 /.vscode
 .prettierrc
 *.tsbuildinfo
+.env.local
+*.db
+*.sqlite
+*.sqlite3
