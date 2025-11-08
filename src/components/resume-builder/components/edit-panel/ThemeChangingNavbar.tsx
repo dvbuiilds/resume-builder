@@ -28,10 +28,10 @@ export const ThemeChangingNavbar: React.FC = () => {
         {Object.entries(themeFontsReadOnly).map(([fontKey, fontName]) => (
           <button
             key={`${fontKey}_${fontName}`}
-            className={`flex-none whitespace-nowrap px-2 py-1 text-xs rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:shadow-md ${
+            className={`flex-none whitespace-nowrap px-3 py-2 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:shadow-md ${
               font === fontName
-                ? 'bg-blue-500 text-white border-2 border-blue-600'
-                : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-400'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700'
             }`}
             onClick={() => changeThemeFont(fontKey as ThemeFontKeys)}
           >
@@ -41,7 +41,7 @@ export const ThemeChangingNavbar: React.FC = () => {
       </div>
 
       {/* Color Selection */}
-      <div className={'flex gap-2'}>
+      {/* <div className={'flex gap-2'}>
         {Object.entries(themeColorsReadOnly).map(([colorName, colorCode]) => (
           <div
             key={`${colorName}_${colorCode}`}
@@ -50,7 +50,7 @@ export const ThemeChangingNavbar: React.FC = () => {
             onClick={() => changeThemeColor(colorName as ThemeColorKeys)}
           />
         ))}
-      </div>
+      </div> */}
     </div>
   );
 };

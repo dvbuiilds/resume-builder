@@ -45,7 +45,7 @@ export const ResumeBuilder: React.FC = () => {
         {displayMode === 'collapsed' ? <EditPanelToggleButton /> : null}
 
         {/* Right Column - Resume Preview */}
-        <div className="flex-1 min-h-screen overflow-auto py-2 px-4 flex items-start justify-center transition-all duration-300 bg-gray-200">
+        <div className="flex-1 min-h-screen overflow-auto scrollbar-hide py-2 px-4 flex items-start justify-center transition-all duration-300 bg-gray-200">
           <Resume />
         </div>
       </div>
