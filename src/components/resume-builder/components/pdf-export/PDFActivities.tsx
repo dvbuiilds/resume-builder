@@ -23,12 +23,19 @@ export const PDFActivities: React.FC<PDFActivitiesProps> = ({
         <View key={index} style={{ marginBottom: 10 }}>
           <View style={styles.row}>
             <View style={styles.flex1}>
-              <Text style={styles.itemTitle}>{activity.activityTitle}</Text>
-              <Text style={styles.itemSubtitle}>
+              <Text style={[styles.itemTitle, { fontWeight: 700 }]}>
+                {activity.activityTitle}
+              </Text>
+              <Text
+                style={[
+                  styles.itemSubtitle,
+                  { fontWeight: 700, fontStyle: 'normal' },
+                ]}
+              >
                 {activity.institutionName}
               </Text>
             </View>
-            <Text style={styles.itemDate}>
+            <Text style={[styles.itemDate, { fontWeight: 700 }]}>
               {activity.startDate} - {activity.endDate}
             </Text>
           </View>

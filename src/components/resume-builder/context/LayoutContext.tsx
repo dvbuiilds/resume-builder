@@ -1,4 +1,3 @@
-'use client';
 import React, { createContext, useState, useContext } from 'react';
 import type { ActiveSectionName, DisplayMode } from '../types/layout';
 import { SectionNameMapping } from '../config/section-name-config';
@@ -7,6 +6,7 @@ interface LayoutContextType {
   displayMode: DisplayMode;
   activeSection: ActiveSectionName;
   closeEditPanel: () => void;
+  openEditPanel: () => void;
   toggleDisplayMode: (_: ActiveSectionName) => void;
   updateActiveSection: React.Dispatch<React.SetStateAction<ActiveSectionName>>;
   sectionsOrder: Array<ActiveSectionName>;
@@ -31,22 +31,24 @@ const initialSectionsOrder: ActiveSectionName[] = [
 export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [displayMode, updateDisplayMode] = useState<DisplayMode>('preview');
+  const [displayMode, updateDisplayMode] = useState<DisplayMode>('visible');
   const [activeSection, updateActiveSection] = useState<ActiveSectionName>('');
   const [sectionsOrder, updateSectionsOrder] =
     useState<Array<ActiveSectionName>>(initialSectionsOrder);
 
   const closeEditPanel = () => {
-    updateDisplayMode('preview');
+    updateDisplayMode('collapsed');
+  };
+
+  const openEditPanel = () => {
+    updateDisplayMode('visible');
   };
 
   const toggleDisplayMode = (sectionName: ActiveSectionName) => {
     if (sectionName === activeSection) {
       updateActiveSection('');
-      updateDisplayMode('preview');
     } else {
       updateActiveSection(sectionName);
-      updateDisplayMode('edit');
     }
   };
 
@@ -56,6 +58,7 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({
         displayMode,
         activeSection,
         closeEditPanel,
+        openEditPanel,
         toggleDisplayMode,
         updateActiveSection,
         sectionsOrder,

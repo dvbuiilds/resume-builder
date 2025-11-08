@@ -1,15 +1,15 @@
 import React from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 export const Title: React.FC = () => {
-  const { title } = useResumeData();
+  const title = useResumeStore((s) => s.title);
   const { color } = useResumeTheme();
   return (
     <div className="w-full">
-      <p className="text-center font-medium text-lg" style={{ color }}>
+      <p className="text-center font-bold text-lg uppercase" style={{ color }}>
         {title}
       </p>
     </div>

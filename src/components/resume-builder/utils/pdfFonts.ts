@@ -14,23 +14,23 @@ export const registerPDFFonts = () => {
     fonts: [
       // Regular weights
       {
-        src: '/fonts/CormorantGaramond-Light.ttf',
+        src: '/fonts/CormorantGaramond/CormorantGaramond-Light.ttf',
         fontWeight: 300,
       },
       {
-        src: '/fonts/CormorantGaramond-Regular.ttf',
+        src: '/fonts/CormorantGaramond/CormorantGaramond-Regular.ttf',
         fontWeight: 400,
       },
       {
-        src: '/fonts/CormorantGaramond-Medium.ttf',
+        src: '/fonts/CormorantGaramond/CormorantGaramond-Medium.ttf',
         fontWeight: 500,
       },
       {
-        src: '/fonts/CormorantGaramond-SemiBold.ttf',
+        src: '/fonts/CormorantGaramond/CormorantGaramond-SemiBold.ttf',
         fontWeight: 600,
       },
       {
-        src: '/fonts/CormorantGaramond-Bold.ttf',
+        src: '/fonts/CormorantGaramond/CormorantGaramond-Bold.ttf',
         fontWeight: 700,
       },
       // Italic weights (needed because styles use fontStyle: 'italic')

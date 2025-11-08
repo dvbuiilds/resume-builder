@@ -7,16 +7,16 @@ import { HorizontalRule } from './HorizontalRule';
 import type { Project } from '../../types/resume-data';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 export const Projects: React.FC = () => {
-  const { projects } = useResumeData();
+  const projects = useResumeStore((s) => s.projects);
   const { color } = useResumeTheme();
 
   return (
     <div className="my-1">
-      <h2 className="font-medium text-sm" style={{ color }}>
+      <h2 className="font-bold text-sm" style={{ color }}>
         {projects.title}
       </h2>
       <HorizontalRule color={color} />
@@ -34,10 +34,10 @@ const Project: React.FC<{ index: number; data: Project }> = ({
   return (
     <div className="mb-1">
       <div className="flex justify-between">
-        <div className="font-medium text-xs">
+        <div className="font-bold text-xs">
           {data.organizationName} - {data.projectTitle}
         </div>
-        <div className="font-medium text-xs">
+        <div className="font-bold text-xs">
           {data.startDate} — {data.endDate}
         </div>
       </div>

@@ -7,16 +7,16 @@ import { HorizontalRule } from './HorizontalRule';
 import type { AchievementItem } from '../../types/resume-data';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 export const Achievements: React.FC = () => {
-  const { achievements } = useResumeData();
+  const achievements = useResumeStore((s) => s.achievements);
   const { color } = useResumeTheme();
 
   return (
     <div className="my-1">
-      <h2 className="font-medium text-sm" style={{ color }}>
+      <h2 className="font-bold text-sm" style={{ color }}>
         {achievements.title}
       </h2>
       <HorizontalRule color={color} />
@@ -35,10 +35,10 @@ const AchievementItem: React.FC<AchievementItemProps> = ({ data }) => {
   return (
     <div className="mb-1">
       <div className="flex justify-between">
-        <div className="font-medium text-xs">
+        <div className="font-bold text-xs">
           {data.awardName} - {data.institutionName}
         </div>
-        <div className="text-xs">{data.dateAwarded}</div>
+        <div className="text-xs font-bold">{data.dateAwarded}</div>
       </div>
       <p className="text-xs">{data.description}</p>
     </div>

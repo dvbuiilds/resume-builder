@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 
 // COMPONENTS
 import { Experience } from '../../types/resume-data';
@@ -13,10 +13,25 @@ import {
 } from './EditPanelComponents';
 
 export const WorkExperienceEditBox: React.FC = () => {
-  const { workExperience, updateWorkExperience } = useResumeData();
+  const workExperience = useResumeStore((s) => s.workExperience);
+  const setWorkExperienceTitle = useResumeStore(
+    (s) => s.setWorkExperienceTitle,
+  );
+  const updateExperience = useResumeStore((s) => s.updateExperience);
+  const addExperience = useResumeStore((s) => s.addExperience);
+  const removeExperience = useResumeStore((s) => s.removeExperience);
+  const addExperienceDescription = useResumeStore(
+    (s) => s.addExperienceDescription,
+  );
+  const updateExperienceDescription = useResumeStore(
+    (s) => s.updateExperienceDescription,
+  );
+  const removeExperienceDescription = useResumeStore(
+    (s) => s.removeExperienceDescription,
+  );
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateWorkExperience({ ...workExperience, title: event.target.value });
+    setWorkExperienceTitle(event.target.value);
   };
 
   const handleExperienceChange = (
@@ -24,20 +39,7 @@ export const WorkExperienceEditBox: React.FC = () => {
     field: keyof Experience,
     value: string,
   ) => {
-    updateWorkExperience((prev) => {
-      const selectedExperienceItem = prev.experience[index];
-      const updatedExperienceItem = {
-        ...selectedExperienceItem,
-        [field]: value,
-      };
-      const updateExperience = prev.experience.map((prevExp, expIndex) => {
-        if (expIndex === index) {
-          return updatedExperienceItem;
-        }
-        return prevExp;
-      });
-      return { ...prev, experience: updateExperience };
-    });
+    updateExperience(index, { [field]: value } as any);
     return;
   };
 
@@ -46,31 +48,11 @@ export const WorkExperienceEditBox: React.FC = () => {
     descIndex: number,
     value: string,
   ) => {
-    updateWorkExperience((prev) => {
-      const selectedExperience = { ...prev.experience[expIndex] };
-      selectedExperience.description[descIndex] = value;
-      const updatedExperience = prev.experience.map((prevExp, index) => {
-        if (index === expIndex) {
-          return selectedExperience;
-        }
-        return prevExp;
-      });
-      return { ...prev, experience: updatedExperience };
-    });
+    updateExperienceDescription(expIndex, descIndex, value);
   };
 
   const addNewExperience = () => {
-    const newExperience: Experience = {
-      companyName: '',
-      jobTitle: '',
-      startDate: '',
-      endDate: '',
-      description: [''],
-    };
-    updateWorkExperience({
-      ...workExperience,
-      experience: [...workExperience.experience, newExperience],
-    });
+    addExperience();
   };
 
   const deleteExperience = (index: number) => {
@@ -79,25 +61,11 @@ export const WorkExperienceEditBox: React.FC = () => {
       return;
     }
 
-    updateWorkExperience((prev) => {
-      const updatedExperience = prev.experience.filter((_, i) => i !== index);
-      return { ...prev, experience: updatedExperience };
-    });
+    removeExperience(index);
   };
 
   const addNewDescription = (expIndex: number) => {
-    updateWorkExperience((prev) => {
-      const updatedExperienceArray = prev.experience.map((prevExp, index) => {
-        if (index === expIndex) {
-          return {
-            ...prevExp,
-            description: [...prevExp.description, ''],
-          };
-        }
-        return prevExp;
-      });
-      return { ...prev, experience: updatedExperienceArray };
-    });
+    addExperienceDescription(expIndex);
   };
 
   const deleteDescription = (expIndex: number, descIndex: number) => {
@@ -105,22 +73,7 @@ export const WorkExperienceEditBox: React.FC = () => {
       alert('Atleast one description is needed for experience.');
       return;
     }
-    updateWorkExperience((prev) => {
-      const selectedExperience = prev.experience[expIndex];
-      const updatedDescriptions = selectedExperience.description.filter(
-        (_, index) => descIndex !== index,
-      );
-      const updatedExperienceArray = prev.experience.map((prevExp, index) => {
-        if (expIndex === index) {
-          return {
-            ...prevExp,
-            description: updatedDescriptions,
-          };
-        }
-        return prevExp;
-      });
-      return { ...prev, experience: updatedExperienceArray };
-    });
+    removeExperienceDescription(expIndex, descIndex);
   };
 
   return (
@@ -178,14 +131,14 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
   deleteDescription,
 }) => {
   return (
-    <div className="p-1 border rounded relative flex flex-col gap-1">
+    <div className="p-2 rounded relative flex flex-col gap-2 bg-gray-50">
       <div className="flex flex-row items-center justify-between">
-        <p className="text-xs font-medium">{`Experience #${index}`}</p>
+        <p className="text-xs font-medium">{`Experience #${index + 1}`}</p>
         <ButtonWithCrossIcon onClick={() => deleteExperience(index)} />
       </div>
       <InputField
         value={data.companyName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleExperienceChange(index, 'companyName', event.target.value)
         }
         placeholder="Company Name"
@@ -193,7 +146,7 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
       <InputField
         type="text"
         value={data.jobTitle}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleExperienceChange(index, 'jobTitle', event.target.value)
         }
         placeholder="Job Title"
@@ -202,7 +155,7 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
         <InputField
           type="text"
           value={data.startDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleExperienceChange(index, 'startDate', event.target.value)
           }
           placeholder="Start Date"
@@ -210,7 +163,7 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
         <InputField
           type="text"
           value={data.endDate}
-          onChange={(event) =>
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleExperienceChange(index, 'endDate', event.target.value)
           }
           placeholder="End Date"
@@ -222,10 +175,11 @@ const ExperienceEditBox: React.FC<ExperienceEditBoxProps> = ({
           <InputField
             type="text"
             value={desc}
-            onChange={(event) =>
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
               handleDescriptionChange(index, descIndex, event.target.value)
             }
             placeholder={`Description #${descIndex}`}
+            isDescriptionField
           />
           <ButtonWithCrossIcon
             onClick={() => deleteDescription(index, descIndex)}

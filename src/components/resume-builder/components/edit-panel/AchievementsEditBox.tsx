@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 
 // COMPONENTS
 import {
@@ -14,10 +14,14 @@ import {
 import type { AchievementItem } from '../../types/resume-data';
 
 export const AchievementsEditBox: React.FC = () => {
-  const { achievements, updateAchievements } = useResumeData();
+  const achievements = useResumeStore((s) => s.achievements);
+  const setAchievementsTitle = useResumeStore((s) => s.setAchievementsTitle);
+  const addAchievement = useResumeStore((s) => s.addAchievement);
+  const updateAchievement = useResumeStore((s) => s.updateAchievement);
+  const removeAchievement = useResumeStore((s) => s.removeAchievement);
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateAchievements((prev) => ({ ...prev, title: event.target.value }));
+    setAchievementsTitle(event.target.value);
   };
 
   const handleAchievementChange = (
@@ -25,27 +29,11 @@ export const AchievementsEditBox: React.FC = () => {
     field: keyof AchievementItem,
     value: string,
   ) => {
-    updateAchievements((prev) => {
-      const updatedAchievementList = [...prev.achievementList];
-      updatedAchievementList[index] = {
-        ...updatedAchievementList[index],
-        [field]: value,
-      };
-      return { ...prev, achievementList: updatedAchievementList };
-    });
+    updateAchievement(index, { [field]: value } as any);
   };
 
   const addNewAchievement = () => {
-    const newAchievement: AchievementItem = {
-      awardName: '',
-      institutionName: '',
-      dateAwarded: '',
-      description: '',
-    };
-    updateAchievements((prev) => ({
-      ...prev,
-      achievementList: [...prev.achievementList, newAchievement],
-    }));
+    addAchievement();
   };
 
   const deleteAchievement = (index: number) => {
@@ -53,10 +41,7 @@ export const AchievementsEditBox: React.FC = () => {
       alert('At least one achievement item is required.');
       return;
     }
-    updateAchievements((prev) => ({
-      ...prev,
-      achievementList: prev.achievementList.filter((_, i) => i !== index),
-    }));
+    removeAchievement(index);
   };
 
   return (
@@ -101,38 +86,39 @@ const AchievementEditBox: React.FC<AchievementEditBoxProps> = ({
   deleteAchievement,
 }) => {
   return (
-    <div className="p-1 border rounded relative flex flex-col gap-1">
+    <div className="p-2 rounded relative flex flex-col gap-2 bg-gray-50">
       <div className="flex flex-row items-center justify-between">
         <p className="text-xs font-medium">{`Achievement #${index + 1}`}</p>
         <ButtonWithCrossIcon onClick={() => deleteAchievement(index)} />
       </div>
       <InputField
         value={data.awardName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleAchievementChange(index, 'awardName', event.target.value)
         }
         placeholder="Award Name"
       />
       <InputField
         value={data.institutionName}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleAchievementChange(index, 'institutionName', event.target.value)
         }
         placeholder="Institution Name"
       />
       <InputField
         value={data.dateAwarded}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
           handleAchievementChange(index, 'dateAwarded', event.target.value)
         }
         placeholder="Date Awarded"
       />
       <InputField
         value={data.description}
-        onChange={(event) =>
+        onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
           handleAchievementChange(index, 'description', event.target.value)
         }
         placeholder="Description"
+        isDescriptionField
       />
     </div>
   );

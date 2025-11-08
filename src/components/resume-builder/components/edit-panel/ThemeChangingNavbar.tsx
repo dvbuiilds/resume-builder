@@ -1,13 +1,16 @@
 import React from 'react';
 
 // HOOKS
-import { useResumeTheme } from './context/ResumeThemeContext';
+import { useResumeTheme } from '../../context/ResumeThemeContext';
 
 // TYPES
-import type { ThemeColorKeys, ThemeFontKeys } from './types/theme';
+import type { ThemeColorKeys, ThemeFontKeys } from '../../types/theme';
 
 // CONFIGS
-import { themeColorsReadOnly, themeFontsReadOnly } from './config/theme-config';
+import {
+  themeColorsReadOnly,
+  themeFontsReadOnly,
+} from '../../config/theme-config';
 
 /**
  *
@@ -19,16 +22,16 @@ export const ThemeChangingNavbar: React.FC = () => {
   const { color, changeThemeColor, font, changeThemeFont } = useResumeTheme();
 
   return (
-    <div className={'flex flex-col gap-4 items-center'}>
+    <div className={'flex flex-col gap-3'}>
       {/* Font Selection */}
-      <div className={'flex justify-around gap-4'}>
+      <div className={'flex flex-wrap gap-2'}>
         {Object.entries(themeFontsReadOnly).map(([fontKey, fontName]) => (
           <button
             key={`${fontKey}_${fontName}`}
-            className={`px-4 py-2 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:shadow-md ${
+            className={`flex-none whitespace-nowrap px-3 py-2 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:shadow-md ${
               font === fontName
-                ? 'bg-blue-500 text-white border-2 border-blue-600'
-                : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700'
             }`}
             onClick={() => changeThemeFont(fontKey as ThemeFontKeys)}
           >
@@ -38,16 +41,16 @@ export const ThemeChangingNavbar: React.FC = () => {
       </div>
 
       {/* Color Selection */}
-      <div className={'flex justify-around gap-4'}>
+      {/* <div className={'flex gap-2'}>
         {Object.entries(themeColorsReadOnly).map(([colorName, colorCode]) => (
           <div
             key={`${colorName}_${colorCode}`}
-            className={`w-6 h-6 rounded-full cursor-pointer transition-shadow duration-300 ease-in-out hover:shadow-lg transition-colors duration-300 ease-in-out ${color === colorCode ? 'border-4 border-blue-300' : 'border-4 border-white'}`}
+            className={`w-5 h-5 rounded-full cursor-pointer transition-shadow duration-300 ease-in-out hover:shadow-lg transition-colors duration-300 ease-in-out ${color === colorCode ? 'border-2 border-blue-500 shadow-md' : 'border border-gray-300'}`}
             style={{ backgroundColor: colorCode }}
             onClick={() => changeThemeColor(colorName as ThemeColorKeys)}
           />
         ))}
-      </div>
+      </div> */}
     </div>
   );
 };

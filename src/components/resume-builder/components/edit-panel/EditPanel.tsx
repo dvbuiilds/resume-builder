@@ -1,4 +1,14 @@
 import React from 'react';
+import {
+  MdOutlineTitle,
+  MdOutlineWorkOutline,
+  MdOutlineLink,
+  MdOutlineSchool,
+  MdOutlineFolderSpecial,
+  MdOutlineEmojiEvents,
+  MdOutlineDirectionsRun,
+  MdOutlineExtension,
+} from 'react-icons/md';
 
 // HOOKS
 import { useLayout } from '../../context/LayoutContext';
@@ -9,6 +19,8 @@ import { ButtonWithCrossIcon } from './EditPanelComponents';
 import { SocialHandlesEditBox } from './SocialHandlesEditBox';
 import { TitleEditBox } from './TitleEditBox';
 import { WorkExperienceEditBox } from './WorkExperienceEditBox';
+import { SectionSelectionCards } from '../../SectionSelectionCards';
+import { ThemeChangingNavbar } from './ThemeChangingNavbar';
 
 // TYPES
 import { ActiveSectionName } from '../../types/layout';
@@ -24,36 +36,87 @@ import {
   SectionIdTitleMapping,
 } from '../../config/section-name-config';
 
-const renderSection = (sectionName: ActiveSectionName) => {
+const getSectionIcon = (sectionName: ActiveSectionName) => {
+  switch (sectionName) {
+    case SectionNameMapping.TITLE:
+      return <MdOutlineTitle />;
+    case SectionNameMapping.WORK_EXPERIENCE:
+      return <MdOutlineWorkOutline />;
+    case SectionNameMapping.SOCIAL_HANDLES:
+      return <MdOutlineLink />;
+    case SectionNameMapping.EDUCATION:
+      return <MdOutlineSchool />;
+    case SectionNameMapping.PROJECTS:
+      return <MdOutlineFolderSpecial />;
+    case SectionNameMapping.ACHIEVEMENTS:
+      return <MdOutlineEmojiEvents />;
+    case SectionNameMapping.ACTIVITIES:
+      return <MdOutlineDirectionsRun />;
+    case SectionNameMapping.SKILLS:
+      return <MdOutlineExtension />;
+    default:
+      return null;
+  }
+};
+
+const renderSection = (
+  sectionName: ActiveSectionName,
+  isOpen: boolean,
+  onToggle: () => void,
+) => {
+  const icon = getSectionIcon(sectionName);
+  const title = SectionIdTitleMapping[sectionName];
+
+  let content: React.ReactNode;
   switch (sectionName) {
     case SectionNameMapping.TITLE: {
-      return <TitleEditBox />;
+      content = <TitleEditBox />;
+      break;
     }
     case SectionNameMapping.SOCIAL_HANDLES: {
-      return <SocialHandlesEditBox />;
+      content = <SocialHandlesEditBox />;
+      break;
     }
     case SectionNameMapping.WORK_EXPERIENCE: {
-      return <WorkExperienceEditBox />;
+      content = <WorkExperienceEditBox />;
+      break;
     }
     case SectionNameMapping.PROJECTS: {
-      return <ProjectsEditBox />;
+      content = <ProjectsEditBox />;
+      break;
     }
     case SectionNameMapping.EDUCATION: {
-      return <EducationEditBox />;
+      content = <EducationEditBox />;
+      break;
     }
     case SectionNameMapping.ACTIVITIES: {
-      return <ActivitiesEditBox />;
+      content = <ActivitiesEditBox />;
+      break;
     }
     case SectionNameMapping.SKILLS: {
-      return <SkillsEditBox />;
+      content = <SkillsEditBox />;
+      break;
     }
     case SectionNameMapping.ACHIEVEMENTS: {
-      return <AchievementsEditBox />;
+      content = <AchievementsEditBox />;
+      break;
     }
     default: {
-      return;
+      return null;
     }
   }
+
+  return (
+    <AccordionContainer
+      key={`${sectionName}_editBox`}
+      title={title}
+      icon={icon}
+      isOpen={isOpen}
+      onToggle={onToggle}
+    >
+      {content}
+    </AccordionContainer>
+  );
 };
 
 export const EditPanel: React.FC = () => {
@@ -68,27 +131,36 @@ export const EditPanel: React.FC = () => {
     }
   };
 
-  const renderEditSections = () =>
-    sectionsOrder.map((sectionName) => {
-      return (
-        <AccordionContainer
-          key={`${sectionName}_editBox`}
-          title={SectionIdTitleMapping[sectionName]}
-          isOpen={activeSection === sectionName}
-          onToggle={() => onTabClick(sectionName)}
-        >
-          {renderSection(sectionName)}
-        </AccordionContainer>
-      );
-    });
-
   return (
-    <div className="w-1/3 h-full relative p-2 border border-gray-300 rounded-md bg-blue-50 border">
-      <div className="flex flex-row items-center justify-between mb-2">
-        <p className="font-medium">Edit Panel</p>
-        <ButtonWithCrossIcon onClick={closeEditPanel} />
+    <div className="w-full h-screen relative px-3 pb-2 border border-gray-200 rounded-md bg-white overflow-y-auto scrollbar-hide">
+      <div className="flex flex-row items-center justify-between mb-4 sticky top-0 bg-white z-10 py-2 shadow-sm">
+        <p className="text-xl font-semibold">Edit Panel</p>
+        <div className="w-[20px] h-[20px] rounded-xl bg-gray-300 flex items-center justify-center">
+          <ButtonWithCrossIcon onClick={closeEditPanel} />
+        </div>
       </div>
-      {renderEditSections()}
+
+      {/* Section Selection Cards */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium mb-3 text-gray-700">Sections</h3>
+        <SectionSelectionCards />
+      </div>
+
+      {/* Theme Options */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium mb-3 text-gray-700">Theme</h3>
+        <ThemeChangingNavbar />
+      </div>
+
+      {/* Edit Sections */}
+      <div>
+        <h3 className="text-sm font-medium mb-3 text-gray-700">Content</h3>
+        {sectionsOrder.map((sectionName) =>
+          renderSection(sectionName, activeSection === sectionName, () =>
+            onTabClick(sectionName),
+          ),
+        )}
+      </div>
     </div>
   );
 };

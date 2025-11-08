@@ -2,12 +2,7 @@ import React from 'react';
 import { Cormorant_Garamond, Inter } from 'next/font/google';
 
 // THIRD_PARTY
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  type DropResult,
-} from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 // HOOKS
 import { useLayout } from '../../context/LayoutContext';
@@ -40,8 +35,8 @@ const cormorantGaramond = Cormorant_Garamond({
 const inter = Inter({ subsets: ['latin'] });
 
 const A4_SHEET_CONFIG = {
-  width: '595px',
-  height: '842px',
+  width: 595,
+  height: 842,
 };
 
 const renderSection = (sectionName: ActiveSectionName) => {
@@ -95,8 +90,13 @@ export const Resume = () => {
 
   return (
     <div
-      className={`${fontClassName} shadow-md w-3/4 bg-slate-50 mt-2 p-4 flex flex-col`}
-      style={fontStyle}
+      className={`${fontClassName} shadow-lg bg-white p-4 flex flex-col`}
+      style={{
+        ...fontStyle,
+        width: A4_SHEET_CONFIG.width,
+        scale: 1.2,
+        marginTop: 100,
+      }}
     >
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="list">

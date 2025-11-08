@@ -1,4 +1,3 @@
-'use client';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import type {
   Achievements,
@@ -45,7 +44,7 @@ const initialResumeData: {
   skills: Skills;
   achievements: Achievements;
 } = {
-  title: 'Enter Your Name',
+  title: 'Your Name',
   socialHandles: [
     { label: 'abc@example.com', link: '#use mailto: in the link' },
     { label: 'LinkedIn', link: '#' },

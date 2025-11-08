@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { ChangeEvent, useMemo } from 'react';
 
 // THIRD_PARTY
 import {
@@ -9,7 +9,7 @@ import {
 } from '@hello-pangea/dnd';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 
 // COMPONENTS
 import { DraggableWrapper } from '../wrappers/DraggableWrapper';
@@ -25,7 +25,11 @@ import type { SocialHandle } from '../../types/resume-data';
 type SocialHandleKeys = 'label' | 'link';
 
 export const SocialHandlesEditBox: React.FC = () => {
-  const { socialHandles, updateSocialHandles } = useResumeData();
+  const socialHandles = useResumeStore((s) => s.socialHandles);
+  const setSocialHandles = useResumeStore((s) => s.setSocialHandles);
+  const updateSocialHandleAt = useResumeStore((s) => s.updateSocialHandleAt);
+  const addSocialHandle = useResumeStore((s) => s.addSocialHandle);
+  const removeSocialHandleAt = useResumeStore((s) => s.removeSocialHandleAt);
 
   const onDragEnd = (result: DropResult<string>) => {
     if (!result.destination) return;
@@ -33,27 +37,21 @@ export const SocialHandlesEditBox: React.FC = () => {
       return;
     }
 
-    updateSocialHandles((prev) => {
-      // getting new array reference.
-      const newItems = Array.from(prev);
-      // removing the dragged item from the existing array. the index of the dragged item is available in result.source.index.
-      const [reorderedItem] = newItems.splice(result.source.index, 1);
-      // placing the dragged item to the destination index. the destination index is available in result.destination.index.
-      newItems.splice(result?.destination?.index ?? 0, 0, reorderedItem);
-      return newItems;
-    });
+    const newItems = Array.from(socialHandles);
+    // removing the dragged item from the existing array. the index of the dragged item is available in result.source.index.
+    const [reorderedItem] = newItems.splice(result.source.index, 1);
+    // placing the dragged item to the destination index. the destination index is available in result.destination.index.
+    newItems.splice(result?.destination?.index ?? 0, 0, reorderedItem);
+    setSocialHandles(newItems);
   };
 
   const onChangeHandler = (
     event: React.ChangeEvent<HTMLInputElement>,
     index: number,
   ) => {
-    updateSocialHandles((prev) => {
-      const updatedSocialHandles = [...prev];
-      updatedSocialHandles[index][event.target.name as SocialHandleKeys] =
-        event.target.value;
-      return updatedSocialHandles;
-    });
+    updateSocialHandleAt(index, {
+      [event.target.name as SocialHandleKeys]: event.target.value,
+    } as any);
   };
 
   const addNewSocialHandle = () => {
@@ -62,10 +60,7 @@ export const SocialHandlesEditBox: React.FC = () => {
       alert('Social Handles should not be more than 5.');
       return;
     }
-    updateSocialHandles((prev) => [
-      ...prev,
-      { label: 'New Social Media', link: 'https://' },
-    ]);
+    addSocialHandle({ label: 'New Social Media', link: 'https://' });
   };
 
   const canDeleteSocialHandles = useMemo(
@@ -79,7 +74,7 @@ export const SocialHandlesEditBox: React.FC = () => {
       alert('Social Media Handles should be minimum 2.');
       return;
     }
-    updateSocialHandles((prev) => prev.filter((_, i) => i !== index));
+    removeSocialHandleAt(index);
   };
 
   return (
@@ -139,27 +134,31 @@ const SocialHandleEditBox: React.FC<{
 }) => {
   return (
     <DraggableWrapper>
-      <div className="flex flex-row justify-between items-center relative">
-        <p className="text-sm">Social Handle #{index}</p>
+      <div className="flex flex-row justify-between pt-1 items-center relative">
+        <p className="text-sm">Social Handle #{index + 1}</p>
         <ButtonWithCrossIcon
           onClick={() => deleteSocialHandle(index)}
           disabled={!canDeleteSocialHandles}
         />
       </div>
-      <div className="flex flex-row gap-2 pr-2 items-center">
+      <div className="flex flex-row gap-2 pr-2 py-1 items-center">
         <p className="text-xs">Label</p>
         <InputField
           value={socialHandle.label}
           name={'label'}
-          onChange={(event) => onChangeHandler(event, index)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            onChangeHandler(event, index)
+          }
         />
       </div>
-      <div className="flex flex-row gap-4 pr-2 items-center">
+      <div className="flex flex-row gap-4 pr-2 pb-1 items-center">
         <p className="text-xs">Link</p>
         <InputField
           value={socialHandle.link}
           name={'link'}
-          onChange={(event) => onChangeHandler(event, index)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            onChangeHandler(event, index)
+          }
         />
       </div>
     </DraggableWrapper>

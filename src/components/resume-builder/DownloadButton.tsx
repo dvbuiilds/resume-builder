@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FaDownload, FaCheck, FaSpinner } from 'react-icons/fa';
 
 // HOOKS
-import { useResumeData } from './context/ResumeDataContext';
+import { useResumeStore } from './store/resumeStore';
 import { useResumeTheme } from './context/ResumeThemeContext';
 import { useLayout } from './context/LayoutContext';
 
@@ -15,7 +15,16 @@ export const DownloadButton: React.FC = () => {
   const [state, setState] = useState<ButtonState>('idle');
 
   // Get data from contexts
-  const resumeData = useResumeData();
+  const resumeData = {
+    title: useResumeStore((s) => s.title),
+    socialHandles: useResumeStore((s) => s.socialHandles),
+    workExperience: useResumeStore((s) => s.workExperience),
+    projects: useResumeStore((s) => s.projects),
+    education: useResumeStore((s) => s.education),
+    activities: useResumeStore((s) => s.activities),
+    skills: useResumeStore((s) => s.skills),
+    achievements: useResumeStore((s) => s.achievements),
+  };
   const { color, font } = useResumeTheme();
   const { sectionsOrder } = useLayout();
 

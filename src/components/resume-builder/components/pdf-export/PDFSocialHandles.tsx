@@ -18,17 +18,15 @@ export const PDFSocialHandles: React.FC<PDFSocialHandlesProps> = ({
       >
         {socialHandles.map((handle, index) => (
           <React.Fragment key={index}>
-            {handle.link && handle.link !== '#' ? (
-              <Link
-                src={handle.link}
-                style={[styles.link, { marginHorizontal: 8 }]}
-              >
-                {handle.label}
-              </Link>
-            ) : (
-              <Text style={{ marginHorizontal: 8 }}>{handle.label}</Text>
+            <Link
+              src={handle.link}
+              style={[styles.link, { marginHorizontal: 8 }]}
+            >
+              {handle.label}
+            </Link>
+            {index < socialHandles.length - 1 && (
+              <Text style={[styles.text, { marginHorizontal: 4 }]}> • </Text>
             )}
-            {index < socialHandles.length - 1 && <Text> • </Text>}
           </React.Fragment>
         ))}
       </View>
