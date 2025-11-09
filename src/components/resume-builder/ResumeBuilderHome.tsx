@@ -88,7 +88,7 @@ export const ResumeBuilder: React.FC = () => {
         <aside
           className={`${panelWidthClassName} transition-all duration-300 ease-in-out flex flex-row bg-white border-r border-gray-200 shadow-sm`}
         >
-          <div className="flex w-[110px] flex-col gap-3 px-3 py-6">
+          <div className="flex w-[110px] flex-col gap-3 py-6">
             <SidePanelButton
               isActive={isEditOpen}
               icon={<MdOutlineEditNote />}
