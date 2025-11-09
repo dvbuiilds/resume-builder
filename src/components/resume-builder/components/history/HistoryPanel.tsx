@@ -5,7 +5,7 @@ import {
   MdOutlineDescription,
 } from 'react-icons/md';
 
-import { hydrateResumeFromHistory } from '@/components/resume-builder/store/resumePersistence';
+import { hydrateResumeFromHistory } from '@resume-builder/components/resume-builder/store/resumePersistence';
 
 import { useHistory } from '../../context/HistoryContext';
 import { useResumeStore } from '../../store/resumeStore';

@@ -1,14 +1,14 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { dbOperations } from '@/lib/db';
+import { dbOperations } from '@resume-builder/lib/db';
 import {
   hashPassword,
   verifyPassword,
   generateUserId,
   emailExists,
   validateAuthForm,
-} from '@/lib/auth';
+} from '@resume-builder/lib/auth';
 
 // Build providers array
 const providers = [];

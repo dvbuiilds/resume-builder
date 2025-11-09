@@ -12,13 +12,13 @@ import pdfToText from 'react-pdftotext';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-import { useResumeStore } from '@/components/resume-builder/store/resumeStore';
-import type { ResumeOutput } from '@/components/resume-builder/types/pdf-transform-schema';
-import fetchWithTimeout from '@/utils/fetchWithTimeout';
+import { useResumeStore } from '@resume-builder/components/resume-builder/store/resumeStore';
+import type { ResumeOutput } from '@resume-builder/components/resume-builder/types/pdf-transform-schema';
+import fetchWithTimeout from '@resume-builder/utils/fetchWithTimeout';
 import {
   getOrCreateResumeId,
   resetResumeToInitial,
-} from '@/components/resume-builder/store/resumePersistence';
+} from '@resume-builder/components/resume-builder/store/resumePersistence';
 
 const API_TIMEOUT_MS = 120_000;
 const PENDING_UPLOAD_KEY = 'resumeBuilder.pendingUpload';

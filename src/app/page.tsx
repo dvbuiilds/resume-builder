@@ -1,4 +1,4 @@
-import Home from '@/components/resume-builder/Home';
+import Home from '@resume-builder/components/resume-builder/Home';
 
 const RootPage = () => <Home />;
 

@@ -6,7 +6,7 @@ import type {
   Skills,
   SocialHandle,
   WorkExperience,
-} from '@/components/resume-builder/types/resume-data';
+} from '@resume-builder/components/resume-builder/types/resume-data';
 
 export const mockSocialHandles: SocialHandle[] = [
   { label: 'john@example.com', link: 'mailto:john@example.com' },
@@ -148,4 +148,3 @@ export const emptyResumeData = {
     achievementList: [],
   },
 };
-

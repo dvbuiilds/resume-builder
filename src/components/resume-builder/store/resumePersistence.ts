@@ -2,7 +2,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 
-import { sanitizeResumeOutput } from '@/components/resume-builder/types/pdf-transform-schema';
+import { sanitizeResumeOutput } from '@resume-builder/components/resume-builder/types/pdf-transform-schema';
 
 import type { ResumeOutput } from '../types/pdf-transform-schema';
 import { useResumeStore } from './resumeStore';

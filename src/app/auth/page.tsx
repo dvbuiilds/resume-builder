@@ -3,7 +3,7 @@
 import { Suspense, useState, FormEvent, useMemo } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AuthMode } from '@/types/auth';
+import { AuthMode } from '@resume-builder/types/auth';
 
 export default function AuthPage() {
   return (

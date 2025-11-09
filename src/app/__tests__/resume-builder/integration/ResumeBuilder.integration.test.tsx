@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { ResumeDataProvider } from '@/components/resume-builder/context/ResumeDataContext';
-import { LayoutProvider } from '@/components/resume-builder/context/LayoutContext';
-import { ResumeThemeProvider } from '@/components/resume-builder/context/ResumeThemeContext';
-import { useResumeData } from '@/components/resume-builder/context/ResumeDataContext';
-import { useLayout } from '@/components/resume-builder/context/LayoutContext';
-import { useResumeTheme } from '@/components/resume-builder/context/ResumeThemeContext';
+import { ResumeDataProvider } from '@resume-builder/components/resume-builder/context/ResumeDataContext';
+import { LayoutProvider } from '@resume-builder/components/resume-builder/context/LayoutContext';
+import { ResumeThemeProvider } from '@resume-builder/components/resume-builder/context/ResumeThemeContext';
+import { useResumeData } from '@resume-builder/components/resume-builder/context/ResumeDataContext';
+import { useLayout } from '@resume-builder/components/resume-builder/context/LayoutContext';
+import { useResumeTheme } from '@resume-builder/components/resume-builder/context/ResumeThemeContext';
 import { mockWorkExperience, mockProjects } from '../test-utils/test-data';
 
 describe('ResumeBuilder Integration Tests', () => {
@@ -223,7 +223,7 @@ describe('ResumeBuilder Integration Tests', () => {
       });
 
       act(() => {
-        result.current.changeThemeColor('darkGreen');
+        result.current.changeThemeColor('black');
       });
 
       const colorAfterFirstChange = result.current.color;

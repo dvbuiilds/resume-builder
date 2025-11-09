@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import {
   ResumeDataProvider,
   useResumeData,
-} from '@/components/resume-builder/context/ResumeDataContext';
+} from '@resume-builder/components/resume-builder/context/ResumeDataContext';
 import { mockSocialHandles, mockWorkExperience } from '../test-utils/test-data';
 
 describe('ResumeDataContext', () => {

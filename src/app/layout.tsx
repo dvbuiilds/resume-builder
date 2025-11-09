@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Navbar } from 'downloader/components/common/Navbar';
-import { SessionProvider } from '@/components/providers/SessionProvider';
+import { Navbar } from '@resume-builder/components/common/Navbar';
+import { SessionProvider } from '@resume-builder/components/providers/SessionProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 

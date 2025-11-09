@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import { useResumeFontStyles } from '@/components/resume-builder/hooks/useResumeFontStyles';
+import { useResumeFontStyles } from '@resume-builder/components/resume-builder/hooks/useResumeFontStyles';
 
 describe('useResumeFontStyles', () => {
   const cormorantGaramondClassName = 'font-cormorant';
@@ -92,7 +92,7 @@ describe('useResumeFontStyles', () => {
       const firstResult = result.current;
 
       rerender({
-        font: 'Cormorant Garamond',
+        font: 'Inter',
         cormorantGaramondClassName,
         interClassName,
       });
@@ -172,4 +172,3 @@ describe('useResumeFontStyles', () => {
     });
   });
 });
-

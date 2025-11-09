@@ -1,4 +1,4 @@
-import { GroqTimeoutError } from '@/llms/groq/groq';
+import { GroqTimeoutError } from '@resume-builder/llms/groq/groq';
 
 export const withTimeout = async <T>(
   promise: Promise<T>,

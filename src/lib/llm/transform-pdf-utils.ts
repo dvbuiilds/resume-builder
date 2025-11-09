@@ -1,7 +1,7 @@
 import {
   ResumeOutput,
   sanitizeResumeOutput,
-} from '@/components/resume-builder/types/pdf-transform-schema';
+} from '@resume-builder/components/resume-builder/types/pdf-transform-schema';
 
 export const extractJsonString = (raw: string): string | null => {
   const codeBlockMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);

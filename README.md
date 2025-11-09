@@ -1,265 +1,170 @@
 # Resume Builder
 
-A modern, interactive resume builder built with Next.js 14, React 18, and TypeScript. Create professional resumes with drag-and-drop functionality, customizable themes, and real-time preview.
+AI-assisted resume creation and management platform built with Next.js. Users can upload a PDF (resume or LinkedIn export), transform it into structured resume data with Groq, edit the content in an intuitive side-panel UI, and manage up to four saved versions per account.
 
-## 🚀 Features
+## Overview
 
-### Core Functionality
+- **Stack**: Next.js App Router (TypeScript), React 18, Zustand, NextAuth, better-sqlite3, Tailwind CSS
+- **LLM Integration**: Groq chat completions power PDF → structured resume transformation
+- **Persistence**: SQLite for users/resume history/usage limits + dual localStorage/sessionStorage sync for in-progress editing
+- **Deployment Target**: Vercel
 
-- **Interactive Resume Builder**: Build your resume with an intuitive, user-friendly interface
-- **Real-time Preview**: See your changes instantly as you edit
-- **Drag-and-Drop Reordering**: Easily rearrange resume sections by dragging and dropping
-- **Multiple Resume Sections**: Include all essential sections for a comprehensive resume
+## Key Features
 
-### Resume Sections
+- **PDF Parsing** – Extract text client-side (`react-pdftotext`) and transform it server-side via Groq.
+- **Authenticated Editing** – Access to the builder and Groq usage is restricted to signed-in users (Credentials + Google OAuth).
+- **Side Panel UX** – Collapsible edit/history tabs with matching styling and responsive behavior.
+- **Resume Versioning** – Save and restore up to four resume snapshots per user; hydrated straight into the Zustand store.
+- **Usage Limits** – Groq transform endpoint enforces four total conversions per user.
+- **Auto-Persisted State** – Resume data syncs to both localStorage and sessionStorage, preventing data loss on refresh.
+- **Theme Controls** – Switch resume fonts/colors dynamically via a dedicated theme control UI.
 
-The builder supports the following sections:
+## Low-Level Design (LLD)
 
-1. **Title Section**: Personal information including name, title, and contact details
-2. **Social Handles**: Add links to your professional social media profiles
-3. **Education**: Academic qualifications with institutions, dates, and scores
-4. **Work Experience**: Professional experience with company details, roles, and descriptions
-5. **Projects**: Showcase your projects with organization, dates, and detailed descriptions
-6. **Achievements**: Highlight awards and recognitions
-7. **Activities**: Include extracurricular activities and involvement
-8. **Skills**: Display your technical and professional skills in organized categories
-
-### Customization Options
-
-- **5 Theme Colors**: Choose from Black, Orange, Dark Red, Dark Blue, or Dark Green
-- **Flexible Section Management**: Add or remove sections as needed
-- **Customizable Content**: Edit all section details with rich text support
-- **Section Reordering**: Drag sections to arrange them in your preferred order
-
-### User Experience
-
-- **Edit Mode**: Click on any section to edit its content
-- **Preview Mode**: Switch to preview mode for a cleaner view
-- **Responsive Design**: Works seamlessly on desktop and tablet devices
-- **Modern UI**: Clean, professional interface built with Tailwind CSS
-
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 14.1.4
-- **UI Library**: React 18
-- **Language**: TypeScript 5
-- **Styling**: Tailwind CSS 3.3.0
-- **Drag & Drop**: @hello-pangea/dnd 17.0.0
-- **Icons**: React Icons 5.4.0
-- **Font**: Montserrat (Google Fonts)
-
-## 📦 Installation
-
-1. **Clone the repository**
-
-   ```bash
-   git clone <repository-url>
-   cd project
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   yarn install
-   # or
-   npm install
-   ```
-
-3. **Run the development server**
-
-   ```bash
-   yarn dev
-   # or
-   npm run dev
-   ```
-
-4. **Open your browser**
-   Navigate to [http://localhost:3000/resume-builder](http://localhost:3000/resume-builder)
-
-## 🎯 Usage
-
-### Creating Your Resume
-
-1. **Select Sections**: Click on the section cards at the top to add them to your resume
-2. **Edit Content**: Click on any section in the preview to open the edit panel
-3. **Add Details**: Fill in your information in the respective fields
-4. **Reorder Sections**: Drag and drop sections to arrange them in your preferred order
-5. **Choose Theme**: Select a color theme from the theme picker
-6. **Preview**: Toggle between edit and preview modes
-
-### Editing Sections
-
-- **Click to Edit**: Click on any section in the preview area
-- **Edit Panel**: The edit panel opens on the right side
-- **Multiple Entries**: Add multiple entries for sections like work experience, projects, education, etc.
-- **Save Changes**: Changes are saved automatically and reflected in real-time
-
-### Theme Customization
-
-- **Color Picker**: Located at the top of the page
-- **5 Available Themes**: Black, Orange, Dark Red, Dark Blue, Dark Green
-- **Instant Preview**: Theme changes apply immediately to your resume
-
-## 📁 Project Structure
-
-```
+```text
 src/
 ├── app/
-│   ├── resume-builder/
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── globals.css
-│   └── layout.tsx
-└── components/
-    ├── common/
-    │   ├── Navbar.tsx
-    │   └── ...
-    └── resume-builder/
-        ├── ResumeBuilderHome.tsx
-        ├── SectionSelectionCards.tsx
-        ├── ThemeChangingNavbar.tsx
-        ├── components/
-        │   ├── edit-panel/
-        │   │   ├── EditPanel.tsx
-        │   │   ├── TitleEditBox.tsx
-        │   │   ├── SocialHandlesEditBox.tsx
-        │   │   ├── EducationEditBox.tsx
-        │   │   ├── WorkExperienceEditBox.tsx
-        │   │   ├── ProjectsEditBox.tsx
-        │   │   ├── AchievementsEditBox.tsx
-        │   │   ├── ActivitiesEditBox.tsx
-        │   │   └── SkillsEditBox.tsx
-        │   ├── resume-preview/
-        │   │   ├── Resume.tsx
-        │   │   ├── Title.tsx
-        │   │   ├── SocialHandles.tsx
-        │   │   ├── Education.tsx
-        │   │   ├── WorkExperience.tsx
-        │   │   ├── Projects.tsx
-        │   │   ├── Achievements.tsx
-        │   │   ├── Activities.tsx
-        │   │   └── Skills.tsx
-        │   └── wrappers/
-        │       ├── AccordionContainer.tsx
-        │       ├── DraggableWrapper.tsx
-        │       └── EditableWrapper.tsx
-        ├── context/
-        │   ├── LayoutContext.tsx
-        │   ├── ResumeDataContext.tsx
-        │   └── ResumeThemeContext.tsx
-        ├── config/
-        │   ├── section-name-config.ts
-        │   └── theme-config.ts
-        └── types/
-            ├── layout.ts
-            ├── resume-data.ts
-            └── theme.ts
+│   ├── api/
+│   │   ├── auth/[...nextauth]/route.ts      # NextAuth configuration
+│   │   ├── past-resumes/route.ts            # Fetch/save resume history
+│   │   └── transform-pdf-string/route.ts    # Groq transform API (usage-limited)
+│   ├── auth/page.tsx                        # Auth form with Suspense + URL error handling
+│   ├── layout.tsx                           # Global layout + SessionProvider + Navbar
+│   ├── page.tsx                             # Landing page shell
+│   └── resume-builder/page.tsx              # Builder wrapper
+│
+├── components/
+│   └── resume-builder/
+│       ├── Home.tsx                         # Landing page logic & CTA flows
+│       ├── ResumeBuilderHome.tsx            # Main layout with side panel + preview
+│       ├── components/edit-panel/           # Section editors, save button, etc.
+│       ├── components/history/              # Past resume list + restore logic
+│       ├── context/                         # Layout, History, ResumeTheme contexts
+│       ├── store/                           # Zustand store + persistence helpers
+│       └── types/                           # Resume schema & sanitizers
+│
+├── lib/
+│   ├── db.ts                                # better-sqlite3 setup, CRUD helpers
+│   └── llm/transform-pdf-utils.ts           # JSON extraction + sanitize LLM response
+│
+└── utils/
+    ├── fetchWithTimeout.ts                  # Fetch wrapper with abort + timeout
+    └── withTimeout.ts                       # Promise timeout helper (Groq integration)
 ```
 
-## 🎨 Key Components
+### Data Flow
 
-### Context Providers
+1. **Upload** – `Home.tsx` reads PDF → text, keeps pending uploads in sessionStorage for post-login continuity.
+2. **Transform** – Authenticated POST to `/api/transform-pdf-string`; endpoint checks user-specific usage limit, calls Groq, sanitizes output, increments usage.
+3. **Hydrate** – Resume data hydrates Zustand via `hydrateResume` and generates a new `resumeId`.
+4. **Edit** – Editing occurs in the side-panel, reflecting in the preview in real time.
+5. **Save** – `EditPanel` Save posts to `/api/past-resumes`; server persists to SQLite (up to 4 per user) and returns refreshed history.
+6. **Restore** – History tab hydrates selection into the store, syncing with local/session storage.
 
-- **ResumeDataContext**: Manages all resume data and state
-- **ResumeThemeContext**: Handles theme color selection
-- **LayoutContext**: Controls display mode and section ordering
+### State Management
 
-### Edit Panel Components
+- `resumeStore` (Zustand) holds structured resume data plus `resumeId`.
+- `dualStorage` middleware writes to both localStorage and sessionStorage.
+- `HistoryContext` fetches/refreshes server history entries and exposes them to `HistoryPanel`.
+- `LayoutContext` coordinates side-panel state and active sections, auto-unselecting empty sections.
 
-Each section has a dedicated edit box component that provides:
+### Database Schema (SQLite)
 
-- Form fields for all section-specific data
-- Add/remove functionality for multiple entries
-- Input validation and formatting
+- `users` – NextAuth credential storage
+- `user_resumes` – Historical resume entries (`resumeId`, serialized data, timestamps, limited to four newest)
+- `user_usage` – Tracks per-user Groq transform counts (max 4)
 
-### Preview Components
+## API Surface
 
-Each section has a corresponding preview component that renders:
+| Endpoint                    | Method   | Auth | Description                                                  |
+| --------------------------- | -------- | ---- | ------------------------------------------------------------ |
+| `/api/auth/[...nextauth]`   | GET/POST | –    | NextAuth routes (credentials + Google)                       |
+| `/api/past-resumes`         | GET      | ✅   | Retrieve latest resume history (max 4) for the current user  |
+| `/api/past-resumes`         | POST     | ✅   | Save/overwrite resume history entry                          |
+| `/api/transform-pdf-string` | POST     | ✅   | Transform raw resume text using Groq (limited to 4 per user) |
 
-- Formatted display of the data
-- Professional styling
-- Consistent layout across all sections
+### `/api/transform-pdf-string` Payload
 
-## 🔧 Configuration
-
-### Theme Configuration
-
-Themes are defined in `src/components/resume-builder/config/theme-config.ts`:
-
-```typescript
-export const themeColors = {
-  black: '#000000',
-  orange: '#FF5722',
-  darkRed: '#8B0000',
-  darkBlue: '#00008B',
-  darkGreen: '#006400',
-} as const;
+```json
+{
+  "input": "Plain text extracted from PDF"
+}
 ```
 
-### Section Configuration
+Responses:
 
-Section names and titles are managed in `src/components/resume-builder/config/section-name-config.ts`:
+- `200` – `{ "data": ResumeOutput }` (sanitized structured resume)
+- `401` – Not signed in
+- `429` – Usage limit reached (4 transformations)
+- `4xx/5xx` – Error message in `{ "error": string }`
 
-```typescript
-export const SectionIdTitleMapping = {
-  '': '',
-  title: 'Title',
-  socialHandles: 'Social Handles',
-  education: 'Education',
-  workExperience: 'Work Experience',
-  projects: 'Projects',
-  achievements: 'Achievements',
-  activities: 'Activities',
-  skills: 'Skills',
-} as const;
+## Getting Started
+
+```bash
+yarn install
 ```
 
-## 🚀 Build & Deploy
+Create `.env.local`:
 
-### Build for Production
+```bash
+NEXTAUTH_SECRET=your_secret
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GROQ_API_KEY=...
+DATABASE_PATH=./data/database.sqlite # optional override
+```
+
+Initialize database directory if needed:
+
+```bash
+mkdir -p data
+```
+
+Run dev server:
+
+```bash
+yarn dev
+```
+
+Run tests:
+
+```bash
+yarn test
+```
+
+Run lint/type checks:
+
+```bash
+yarn lint
+```
+
+Build production bundle:
 
 ```bash
 yarn build
-# or
-npm run build
 ```
 
-### Start Production Server
+## Deployment (Vercel)
 
-```bash
-yarn start
-# or
-npm start
-```
+1. Push to a Git repository and import into Vercel.
+2. Configure environment variables in Project Settings → Environment Variables.
+3. Set **Install Command** to `yarn install` and **Build Command** to `yarn build`.
+4. Default `Output Directory` remains `.next`.
+5. For persistent data, consider migrating SQLite tables to a hosted database (PlanetScale, Supabase, etc.) or attach Vercel KV/File solutions.
 
-### Deploy to Vercel
+## Usage Guidelines
 
-The easiest way to deploy is using the [Vercel Platform](https://vercel.com/new):
+- **Resume Limit**: Each saved resume history is capped at 4 per user. Oldest entries are pruned automatically.
+- **Transformation Limit**: Groq usage is capped at 4 transforms per user. Extend by adjusting `MAX_TRANSFORM_USAGE` in `db.ts` and usage messages.
+- **Auth Required**: Resume builder route and APIs rely on NextAuth middleware; unauthenticated users are redirected to `/auth`.
+- **Storage Sync**: Clearing browser storage purges local drafts but server-stored histories remain accessible via the history tab.
 
-1. Push your code to GitHub
-2. Import your repository in Vercel
-3. Deploy with one click
+## Development Notes
 
-## 🤝 Contributing
-
-Contributions are welcome! Feel free to:
-
-- Report bugs
-- Suggest new features
-- Submit pull requests
-- Improve documentation
-
-## 📝 License
-
-This project is open source and available under the MIT License.
-
-## 🙏 Acknowledgments
-
-- Built with [Next.js](https://nextjs.org/)
-- Styled with [Tailwind CSS](https://tailwindcss.com/)
-- Drag and drop powered by [@hello-pangea/dnd](https://github.com/hello-pangea/dnd)
-- Icons from [React Icons](https://react-icons.github.io/react-icons/)
+- Aliases: All internal imports use `@resume-builder/...` (configured in `tsconfig.json`).
+- Suspense: The `/auth` page wraps `useSearchParams` usage in `<Suspense>` to satisfy Next.js prerender requirements.
+- Styling: Tailwind classes adhere to consistent spacing and typography for the edit/history panels.
 
 ---
 
-**Happy Resume Building! 🎉**
+Enjoy building polished resumes with an efficient editing workflow and Groq-powered transformations.

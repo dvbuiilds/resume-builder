@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-import { dbOperations } from '@/lib/db';
-import { parseErrorMessage } from '@/components/resume-builder/utils/parseErrorMessage';
+import { dbOperations } from '@resume-builder/lib/db';
+import { parseErrorMessage } from '@resume-builder/components/resume-builder/utils/parseErrorMessage';
 
 const asErrorResponse = (message: string, status: number) =>
   NextResponse.json({ error: message }, { status });

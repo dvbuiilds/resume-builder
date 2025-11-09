@@ -32,7 +32,7 @@ import { useLayout } from '../../context/LayoutContext';
 import { useHistory } from '../../context/HistoryContext';
 
 // UTILS
-import fetchWithTimeout from 'downloader/utils/fetchWithTimeout';
+import fetchWithTimeout from '@resume-builder/utils/fetchWithTimeout';
 import { getResumeSnapshotForSave } from '../../store/resumePersistence';
 import { parseErrorMessage } from '../../utils/parseErrorMessage';
 

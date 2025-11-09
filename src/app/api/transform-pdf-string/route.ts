@@ -3,10 +3,10 @@ import { getToken } from 'next-auth/jwt';
 import {
   getNewChatCompletionWithGroq,
   GroqTimeoutError,
-} from '@/llms/groq/groq';
-import { parseResumeOutput } from '@/lib/llm/transform-pdf-utils';
-import { withTimeout } from '@/utils/withTimeout';
-import { dbOperations } from '@/lib/db';
+} from '@resume-builder/llms/groq/groq';
+import { parseResumeOutput } from '@resume-builder/lib/llm/transform-pdf-utils';
+import { withTimeout } from '@resume-builder/utils/withTimeout';
+import { dbOperations } from '@resume-builder/lib/db';
 
 const GROQ_TIMEOUT_MS = 120_000;
 

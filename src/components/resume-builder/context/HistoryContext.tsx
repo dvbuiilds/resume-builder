@@ -1,6 +1,6 @@
 'use client';
 
-import fetchWithTimeout from 'downloader/utils/fetchWithTimeout';
+import fetchWithTimeout from '@resume-builder/utils/fetchWithTimeout';
 import React, {
   createContext,
   useCallback,
@@ -10,7 +10,7 @@ import React, {
   useState,
 } from 'react';
 
-import { parseErrorMessage } from '@/components/resume-builder/utils/parseErrorMessage';
+import { parseErrorMessage } from '@resume-builder/components/resume-builder/utils/parseErrorMessage';
 
 interface HistoryEntry {
   rowId: string;
