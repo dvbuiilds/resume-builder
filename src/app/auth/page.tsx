@@ -1,11 +1,25 @@
 'use client';
 
-import { useState, FormEvent, useMemo } from 'react';
+import { Suspense, useState, FormEvent, useMemo } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthMode } from '@/types/auth';
 
 export default function AuthPage() {
+  return (
+    <Suspense fallback={<AuthPageSkeleton />}>
+      <AuthPageContent />
+    </Suspense>
+  );
+}
+
+const AuthPageSkeleton = () => (
+  <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+  </div>
+);
+
+function AuthPageContent() {
   const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

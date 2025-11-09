@@ -35,16 +35,16 @@ const SidePanelButton: React.FC<{
   <button
     type="button"
     onClick={onClick}
-    className={`flex w-full flex-col items-center gap-2 rounded-lg px-3 py-4 text-xs font-medium transition ${
+    className={`flex w-full flex-col items-center gap-1.5 rounded-lg px-2 py-3 text-xs font-medium transition ${
       isActive
         ? 'bg-blue-600 text-white shadow-lg'
         : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'
     }`}
   >
-    <span className="flex h-10 w-10 items-center justify-center rounded-full text-xl">
+    <span className="flex h-8 w-8 items-center justify-center rounded-full text-lg">
       {icon}
     </span>
-    <span className="text-center">{label}</span>
+    <span className="text-center leading-tight">{label}</span>
   </button>
 );
 
@@ -88,7 +88,7 @@ export const ResumeBuilder: React.FC = () => {
         <aside
           className={`${panelWidthClassName} transition-all duration-300 ease-in-out flex flex-row bg-white border-r border-gray-200 shadow-sm`}
         >
-          <div className="flex w-[110px] flex-col gap-3 py-6">
+          <div className="flex w-[100px] flex-col gap-2 py-5">
             <SidePanelButton
               isActive={isEditOpen}
               icon={<MdOutlineEditNote />}

@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useMemo, useState } from 'react';
 import {
   MdOutlineAutoAwesomeMotion,
@@ -39,8 +37,8 @@ export const HistoryPanel: React.FC = () => {
   };
 
   return (
-    <div className="h-full w-full bg-white">
-      <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+    <div className="relative h-full w-full overflow-y-auto rounded-md border border-gray-200 bg-white px-3 pb-2 scrollbar-hide">
+      <header className="sticky top-0 z-10 mb-4 flex items-center justify-between border-b border-gray-200 bg-white py-2">
         <div className="flex items-center gap-2 text-gray-700">
           <MdOutlineAutoAwesomeMotion className="text-xl" />
           <h2 className="text-sm font-semibold uppercase tracking-wide">
@@ -50,7 +48,7 @@ export const HistoryPanel: React.FC = () => {
         <button
           type="button"
           onClick={() => refresh().catch(() => undefined)}
-          className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-200 disabled:opacity-60"
           disabled={loading}
         >
           <MdOutlineRefresh className="text-base" />
@@ -58,38 +56,36 @@ export const HistoryPanel: React.FC = () => {
         </button>
       </header>
 
-      <div className="flex flex-col h-[calc(100%-56px)] overflow-y-auto px-4 py-4 gap-3">
+      {error ? (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          {error}
+        </div>
+      ) : null}
+
+      {selectionError ? (
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          {selectionError}
+        </div>
+      ) : null}
+
+      <div className="space-y-3">
         {loading ? (
-          <div className="flex h-full items-center justify-center text-sm text-gray-500">
+          <div className="flex h-32 items-center justify-center text-sm text-gray-500">
             Loading past resumes...
           </div>
         ) : null}
 
-        {!loading && error ? (
-          <div className="rounded-md border border-red-200 bg-red-50 p-4 text-xs text-red-700">
-            {error}
+        {!loading && emptyStateVisible ? (
+          <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-md border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
+            <MdOutlineDescription className="text-4xl text-gray-400" />
+            <p className="font-medium">No resumes saved yet</p>
+            <p className="text-xs text-gray-400">
+              Use the Save button to keep your current resume version.
+            </p>
           </div>
         ) : null}
 
-        {!loading && selectionError ? (
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-xs text-amber-700">
-            {selectionError}
-          </div>
-        ) : null}
-
-        {emptyStateVisible ? (
-          <div className="flex h-full items-center justify-center text-center text-sm text-gray-500">
-            <div>
-              <MdOutlineDescription className="mx-auto mb-2 text-4xl text-gray-400" />
-              <p className="font-medium">No resumes saved yet</p>
-              <p className="mt-1 text-xs text-gray-400">
-                Use the Save button to keep your current resume version.
-              </p>
-            </div>
-          </div>
-        ) : null}
-
-        {!emptyStateVisible
+        {!loading && !emptyStateVisible
           ? entries.map((entry, index) => {
               const isActive = currentResumeId === entry.resumeId;
               return (

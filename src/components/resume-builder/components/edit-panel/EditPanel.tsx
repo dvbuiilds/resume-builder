@@ -15,7 +15,6 @@ import { AccordionContainer } from '../wrappers/AccordionContainer';
 import { AchievementsEditBox } from './AchievementsEditBox';
 import { ActiveSectionName } from '../../types/layout';
 import { ActivitiesEditBox } from './ActivitiesEditBox';
-import { ButtonWithCrossIcon } from './EditPanelComponents';
 import { EducationEditBox } from './EducationEditBox';
 import { ProjectsEditBox } from './ProjectsEditBox';
 import { SectionSelectionCards } from '../../SectionSelectionCards';
@@ -204,8 +203,12 @@ export const EditPanel: React.FC = () => {
 
   return (
     <div className="relative h-screen w-full overflow-y-auto rounded-md border border-gray-200 bg-white px-3 pb-2 scrollbar-hide">
-      <div className="sticky top-0 z-10 mb-4 flex flex-row items-center justify-between bg-white py-2 shadow-sm">
-        <p className="text-xl font-semibold">Edit Panel</p>
+      <header className="sticky top-0 z-10 mb-4 flex items-center justify-between border-b border-gray-200 bg-white py-2">
+        <div className="flex items-center gap-2 text-gray-700">
+          <p className="text-sm font-semibold uppercase tracking-wide">
+            Edit Panel
+          </p>
+        </div>
         <button
           type="button"
           onClick={handleSave}
@@ -214,7 +217,7 @@ export const EditPanel: React.FC = () => {
         >
           {isSaving ? 'Saving...' : 'Save'}
         </button>
-      </div>
+      </header>
 
       {saveFeedback ? (
         <div
