@@ -1,54 +1,121 @@
 'use client';
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { MdOutlineEditNote, MdOutlineHistory } from 'react-icons/md';
 
 // PROVIDERS
-import { ResumeDataProvider } from './context/ResumeDataContext';
 import { LayoutProvider, useLayout } from './context/LayoutContext';
+import { HistoryProvider } from './context/HistoryContext';
 
 // COMPONENTS
 import { ResumeThemeProvider } from './context/ResumeThemeContext';
 import { Resume } from './components/resume-preview/Resume';
-import { ThemeChangingNavbar } from './ThemeChangingNavbar';
+import { DownloadButton } from './DownloadButton';
 import { EditPanel } from './components/edit-panel/EditPanel';
-import { SectionSelectionCards } from './SectionSelectionCards';
+import { HistoryPanel } from './components/history/HistoryPanel';
 
 // This Component is an HOC for ResumeBuilder so that the later can access LayoutContext.
 export const ResumeBuilderHome = () => {
   return (
     <ResumeThemeProvider>
       <LayoutProvider>
-        <ResumeBuilder />
+        <HistoryProvider>
+          <ResumeBuilder />
+        </HistoryProvider>
       </LayoutProvider>
     </ResumeThemeProvider>
   );
 };
 
+const SidePanelButton: React.FC<{
+  isActive: boolean;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}> = ({ isActive, icon, label, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex w-full flex-col items-center gap-1.5 rounded-lg px-2 py-3 text-xs font-medium transition ${
+      isActive
+        ? 'bg-blue-600 text-white shadow-lg'
+        : 'text-gray-500 hover:bg-blue-50 hover:text-blue-600'
+    }`}
+  >
+    <span className="flex h-8 w-8 items-center justify-center rounded-full text-lg">
+      {icon}
+    </span>
+    <span className="text-center leading-tight">{label}</span>
+  </button>
+);
+
 export const ResumeBuilder: React.FC = () => {
-  const { displayMode } = useLayout();
+  const { displayMode, showEditPanel, showHistoryPanel, collapsePanel } =
+    useLayout();
 
-  // We are memoizing this class as the value of resumeWidthClassName is dependent on 2 values of 'displayMode'. So that final className value can be calculated and cached against the corresponding value of displayMode. No need to re-calculating the className value again and again. And at the same time, we can't conditionally change the className string like `w-${displayMode === 'preview' ? '3/4' : '2/3}` on runtime.
-  const resumeWidthClassName = useMemo<string>(
-    () => (displayMode === 'preview' ? 'w-3/4' : 'w-2/3'),
-    [displayMode],
-  );
-
-  // We are memoizing the function that needs re-calculation upon change of displayMode.
-  const renderEditPanel = useCallback(() => {
-    return displayMode === 'edit' ? <EditPanel /> : null;
+  const panelWidthClassName = useMemo(() => {
+    switch (displayMode) {
+      case 'edit':
+      case 'history':
+        return 'w-[520px]';
+      default:
+        return 'w-[80px]';
+    }
   }, [displayMode]);
+
+  const isEditOpen = displayMode === 'edit';
+  const isHistoryOpen = displayMode === 'history';
+
+  const handleEditPanelClick = () => {
+    if (isEditOpen) {
+      collapsePanel();
+    } else {
+      showEditPanel();
+    }
+  };
+
+  const handleHistoryClick = () => {
+    if (isHistoryOpen) {
+      collapsePanel();
+    } else {
+      showHistoryPanel();
+    }
+  };
 
   return (
     <>
-      <SectionSelectionCards />
-      <ThemeChangingNavbar />
-      <ResumeDataProvider>
-        <div className="flex flex-row w-full items-start justify-center gap-2 px-2 h-full">
-          <div className={`flex flex-col ${resumeWidthClassName} items-center`}>
-            <Resume />
+      <div className="flex flex-row w-full h-screen px-1">
+        {/* Left Column - Side Panel with Controls */}
+        <aside
+          className={`${panelWidthClassName} transition-all duration-300 ease-in-out flex flex-row bg-white border-r border-gray-200 shadow-sm`}
+        >
+          <div className="flex w-[100px] flex-col gap-2 py-5">
+            <SidePanelButton
+              isActive={isEditOpen}
+              icon={<MdOutlineEditNote />}
+              label="Edit"
+              onClick={handleEditPanelClick}
+            />
+            <SidePanelButton
+              isActive={isHistoryOpen}
+              icon={<MdOutlineHistory />}
+              label="History"
+              onClick={handleHistoryClick}
+            />
           </div>
-          {renderEditPanel()}
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full w-full">
+              {isEditOpen ? <EditPanel /> : null}
+              {isHistoryOpen ? <HistoryPanel /> : null}
+            </div>
+          </div>
+        </aside>
+
+        {/* Right Column - Resume Preview */}
+        <div className="flex-1 min-h-screen overflow-auto scrollbar-hide py-2 px-4 flex items-start justify-center transition-all duration-300 bg-gray-200">
+          <Resume />
         </div>
-      </ResumeDataProvider>
+      </div>
+      <DownloadButton />
     </>
   );
 };

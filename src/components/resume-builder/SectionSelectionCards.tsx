@@ -10,11 +10,22 @@ import { TbCircleCheckFilled } from 'react-icons/tb';
 import type { ActiveSectionName } from './types/layout';
 
 // CONFIGS
-import { SectionIdTitleMapping } from './config/section-name-config';
+import {
+  SectionIdTitleMapping,
+  SectionNameMapping,
+} from './config/section-name-config';
 
 const sectionsNameList = Object.keys(SectionIdTitleMapping).filter(
   (sectionName) => sectionName.length,
 ) as ActiveSectionName[];
+
+// Required sections that cannot be unselected
+const REQUIRED_SECTIONS: ActiveSectionName[] = [
+  SectionNameMapping.TITLE,
+  SectionNameMapping.SOCIAL_HANDLES,
+  SectionNameMapping.EDUCATION,
+  SectionNameMapping.WORK_EXPERIENCE,
+];
 
 export const SectionSelectionCards = () => {
   const { sectionsOrder, updateSectionsOrder } = useLayout();
@@ -30,6 +41,12 @@ export const SectionSelectionCards = () => {
     sectionName: ActiveSectionName,
   ) => {
     if (isSelected) {
+      // Check if trying to unselect a required section
+      if (REQUIRED_SECTIONS.includes(sectionName)) {
+        const sectionTitle = SectionIdTitleMapping[sectionName];
+        alert(`${sectionTitle} can't be unselected`);
+        return;
+      }
       updateSectionsOrder((prev) =>
         prev.filter((sectionNameInList) => sectionNameInList !== sectionName),
       );
@@ -43,7 +60,7 @@ export const SectionSelectionCards = () => {
   };
 
   return (
-    <div className="flex flex-wrap gap-4">
+    <div className="flex flex-wrap gap-2">
       {sectionsNameList.map((sectionName) => (
         <SectionSelectionCard
           key={sectionName}
@@ -65,7 +82,7 @@ const SectionSelectionCard: React.FC<{
 }> = ({ sectionName, sectionTitle, isSelected, onCardClick }) => {
   return (
     <div
-      className={`relative w-40 p-4 rounded-lg cursor-pointer transition-all duration-300 ${
+      className={`relative flex-none px-3 py-2 rounded-lg cursor-pointer transition-all duration-300 whitespace-nowrap ${
         isSelected ? 'border-2 border-blue-500' : 'border border-gray-300'
       }`}
       onClick={() => onCardClick(isSelected, sectionName)}
@@ -75,7 +92,7 @@ const SectionSelectionCard: React.FC<{
           <TbCircleCheckFilled />
         </div>
       ) : null}
-      <h3 className="text-center text-xs">{sectionTitle}</h3>
+      <h3 className="text-center">{sectionTitle}</h3>
     </div>
   );
 };

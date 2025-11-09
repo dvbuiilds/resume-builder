@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { type ChangeEvent } from 'react';
 
 // HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
+import { useResumeStore } from '../../store/resumeStore';
 
 // COMPONENTS
 import {
@@ -11,10 +11,14 @@ import {
 } from './EditPanelComponents';
 
 export const SkillsEditBox: React.FC = () => {
-  const { skills, updateSkills } = useResumeData();
+  const skills = useResumeStore((s) => s.skills);
+  const setSkillsTitle = useResumeStore((s) => s.setSkillsTitle);
+  const addSkillSet = useResumeStore((s) => s.addSkillSet);
+  const updateSkillSet = useResumeStore((s) => s.updateSkillSet);
+  const removeSkillSet = useResumeStore((s) => s.removeSkillSet);
 
   const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateSkills((prev) => ({ ...prev, title: event.target.value }));
+    setSkillsTitle(event.target.value);
   };
 
   const handleSkillSetChange = (
@@ -22,25 +26,17 @@ export const SkillsEditBox: React.FC = () => {
     field: 'title' | 'skills',
     value: string,
   ) => {
-    updateSkills((prev) => {
-      const updatedSkillSet = [...prev.skillSet];
-      if (field === 'title') {
-        updatedSkillSet[index] = { ...updatedSkillSet[index], title: value };
-      } else {
-        updatedSkillSet[index] = {
-          ...updatedSkillSet[index],
-          skills: value.split(',').map((skill) => skill.trim()),
-        };
-      }
-      return { ...prev, skillSet: updatedSkillSet };
-    });
+    if (field === 'title') {
+      updateSkillSet(index, { title: value });
+    } else {
+      updateSkillSet(index, {
+        skills: value.split(',').map((skill) => skill.trim()),
+      });
+    }
   };
 
   const addNewSkillSet = () => {
-    updateSkills((prev) => ({
-      ...prev,
-      skillSet: [...prev.skillSet, { title: '', skills: [] }],
-    }));
+    addSkillSet();
   };
 
   const deleteSkillSet = (index: number) => {
@@ -48,10 +44,7 @@ export const SkillsEditBox: React.FC = () => {
       alert('At least 1 skillset is required.');
       return;
     }
-    updateSkills((prev) => ({
-      ...prev,
-      skillSet: prev.skillSet.filter((_, i) => i !== index),
-    }));
+    removeSkillSet(index);
   };
 
   return (
@@ -66,7 +59,7 @@ export const SkillsEditBox: React.FC = () => {
       {skills.skillSet.map((skillSet, index) => (
         <div
           key={index}
-          className="p-1 border rounded relative flex flex-col gap-1"
+          className="p-2 rounded relative flex flex-col gap-2 bg-gray-50"
         >
           <div className="flex flex-row items-center justify-between">
             <p className="text-xs font-medium">{`Skill Set #${index + 1}`}</p>
@@ -74,17 +67,18 @@ export const SkillsEditBox: React.FC = () => {
           </div>
           <InputField
             value={skillSet.title}
-            onChange={(e) =>
-              handleSkillSetChange(index, 'title', e.target.value)
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              handleSkillSetChange(index, 'title', event.target.value)
             }
             placeholder="Skill Set Title"
           />
           <InputField
             value={skillSet.skills.join(', ')}
-            onChange={(e) =>
-              handleSkillSetChange(index, 'skills', e.target.value)
+            onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+              handleSkillSetChange(index, 'skills', event.target.value)
             }
             placeholder="Skills (comma-separated)"
+            isDescriptionField
           />
         </div>
       ))}

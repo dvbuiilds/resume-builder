@@ -1,22 +1,25 @@
 import React from 'react';
 
-// HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
-import { useResumeTheme } from '../../context/ResumeThemeContext';
+// COMPONENTS
+import { HorizontalRule } from './HorizontalRule';
 
 // TYPES
 import type { ActivityItem } from '../../types/resume-data';
 
+// HOOKS
+import { useResumeStore } from '../../store/resumeStore';
+import { useResumeTheme } from '../../context/ResumeThemeContext';
+
 export const Activities = () => {
-  const { activities } = useResumeData();
+  const activities = useResumeStore((s) => s.activities);
   const { color } = useResumeTheme();
 
   return (
     <div className="my-1">
-      <h2 className="font-medium text-sm" style={{ color }}>
+      <h2 className="font-bold text-sm" style={{ color }}>
         {activities.title}
       </h2>
-      <hr className="w-full my-1" style={{ borderColor: color }} />
+      <HorizontalRule color={color} />
       {activities.activities.map((activity, index) => (
         <ActivityItem key={`activity_${index}`} index={index} data={activity} />
       ))}
@@ -30,10 +33,10 @@ const ActivityItem: React.FC<{ index: number; data: ActivityItem }> = ({
 }) => (
   <div className="mb-1">
     <div className="flex justify-between">
-      <div className="font-medium text-xs">
+      <div className="font-bold text-xs">
         {data.institutionName} - {data.activityTitle}
       </div>
-      <div className="font-medium text-xs">
+      <div className="font-bold text-xs">
         {data.startDate} — {data.endDate}
       </div>
     </div>

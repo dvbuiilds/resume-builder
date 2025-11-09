@@ -1,9 +1,5 @@
-'use client';
+import Home from '@resume-builder/components/resume-builder/Home';
 
-export default function Home() {
-  return (
-    <div className="flex flex-col items-center gap-1 max-w-screen-xl mx-auto">
-      Welcome!
-    </div>
-  );
-}
+const RootPage = () => <Home />;
+
+export default RootPage;
