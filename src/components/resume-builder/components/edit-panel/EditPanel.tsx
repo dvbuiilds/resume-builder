@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   MdOutlineTitle,
   MdOutlineWorkOutline,
@@ -10,25 +10,32 @@ import {
   MdOutlineExtension,
 } from 'react-icons/md';
 
-// HOOKS
-import { useLayout } from '../../context/LayoutContext';
-
 // COMPONENTS
 import { AccordionContainer } from '../wrappers/AccordionContainer';
+import { AchievementsEditBox } from './AchievementsEditBox';
+import { ActiveSectionName } from '../../types/layout';
+import { ActivitiesEditBox } from './ActivitiesEditBox';
 import { ButtonWithCrossIcon } from './EditPanelComponents';
+import { EducationEditBox } from './EducationEditBox';
+import { ProjectsEditBox } from './ProjectsEditBox';
+import { SectionSelectionCards } from '../../SectionSelectionCards';
+import { SkillsEditBox } from './SkillsEditBox';
 import { SocialHandlesEditBox } from './SocialHandlesEditBox';
+import { ThemeChangingNavbar } from './ThemeChangingNavbar';
 import { TitleEditBox } from './TitleEditBox';
 import { WorkExperienceEditBox } from './WorkExperienceEditBox';
-import { SectionSelectionCards } from '../../SectionSelectionCards';
-import { ThemeChangingNavbar } from './ThemeChangingNavbar';
 
 // TYPES
-import { ActiveSectionName } from '../../types/layout';
-import { ProjectsEditBox } from './ProjectsEditBox';
-import { EducationEditBox } from './EducationEditBox';
-import { ActivitiesEditBox } from './ActivitiesEditBox';
-import { SkillsEditBox } from './SkillsEditBox';
-import { AchievementsEditBox } from './AchievementsEditBox';
+import type { HistoryEntry } from '../../context/HistoryContext';
+
+// HOOKS
+import { useLayout } from '../../context/LayoutContext';
+import { useHistory } from '../../context/HistoryContext';
+
+// UTILS
+import fetchWithTimeout from 'downloader/utils/fetchWithTimeout';
+import { getResumeSnapshotForSave } from '../../store/resumePersistence';
+import { parseErrorMessage } from '../../utils/parseErrorMessage';
 
 // CONFIGS
 import {
@@ -122,6 +129,70 @@ const renderSection = (
 export const EditPanel: React.FC = () => {
   const { activeSection, sectionsOrder, closeEditPanel, updateActiveSection } =
     useLayout();
+  const { entries, setEntries } = useHistory();
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+
+  const handleSave = useCallback(async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+    setSaveFeedback(null);
+
+    try {
+      const snapshot = getResumeSnapshotForSave();
+      const existing = entries.find(
+        (entry) => entry.resumeId === snapshot.resumeId,
+      );
+
+      const response = await fetchWithTimeout(
+        '/api/past-resumes',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            resumeId: snapshot.resumeId,
+            data: snapshot.serialized,
+            rowId: existing?.rowId,
+          }),
+        },
+        2000,
+      );
+
+      if (!response.ok) {
+        const message = await parseErrorMessage(response);
+        throw new Error(message || 'Failed to save resume.');
+      }
+
+      const payload = (await response.json()) as {
+        data?: HistoryEntry[];
+      };
+
+      if (Array.isArray(payload?.data)) {
+        setEntries(payload.data);
+      }
+
+      setSaveFeedback({
+        type: 'success',
+        text: 'Resume saved successfully.',
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to save resume.';
+      setSaveFeedback({
+        type: 'error',
+        text: message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [entries, isSaving, setEntries]);
 
   const onTabClick = (sectionName: ActiveSectionName) => {
     if (activeSection === sectionName) {
@@ -132,29 +203,51 @@ export const EditPanel: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-screen relative px-3 pb-2 border border-gray-200 rounded-md bg-white overflow-y-auto scrollbar-hide">
-      <div className="flex flex-row items-center justify-between mb-4 sticky top-0 bg-white z-10 py-2 shadow-sm">
+    <div className="relative h-screen w-full overflow-y-auto rounded-md border border-gray-200 bg-white px-3 pb-2 scrollbar-hide">
+      <div className="sticky top-0 z-10 mb-4 flex flex-row items-center justify-between bg-white py-2 shadow-sm">
         <p className="text-xl font-semibold">Edit Panel</p>
-        <div className="w-[20px] h-[20px] rounded-xl bg-gray-300 flex items-center justify-center">
-          <ButtonWithCrossIcon onClick={closeEditPanel} />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+          >
+            {isSaving ? 'Saving...' : 'Save'}
+          </button>
+          <div className="flex h-[20px] w-[20px] items-center justify-center rounded-xl bg-gray-300">
+            <ButtonWithCrossIcon onClick={closeEditPanel} />
+          </div>
         </div>
       </div>
 
+      {saveFeedback ? (
+        <div
+          className={`mb-4 rounded-md border px-3 py-2 text-xs ${
+            saveFeedback.type === 'success'
+              ? 'border-green-200 bg-green-50 text-green-700'
+              : 'border-red-200 bg-red-50 text-red-700'
+          }`}
+        >
+          {saveFeedback.text}
+        </div>
+      ) : null}
+
       {/* Section Selection Cards */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium mb-3 text-gray-700">Sections</h3>
+        <h3 className="mb-3 text-sm font-medium text-gray-700">Sections</h3>
         <SectionSelectionCards />
       </div>
 
       {/* Theme Options */}
       <div className="mb-6">
-        <h3 className="text-sm font-medium mb-3 text-gray-700">Theme</h3>
+        <h3 className="mb-3 text-sm font-medium text-gray-700">Theme</h3>
         <ThemeChangingNavbar />
       </div>
 
       {/* Edit Sections */}
       <div>
-        <h3 className="text-sm font-medium mb-3 text-gray-700">Content</h3>
+        <h3 className="mb-3 text-sm font-medium text-gray-700">Content</h3>
         {sectionsOrder.map((sectionName) =>
           renderSection(sectionName, activeSection === sectionName, () =>
             onTabClick(sectionName),

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type {
   Achievements,
@@ -21,6 +22,7 @@ type SetState<T> = (partial: T | ((state: T) => T)) => void;
 
 interface ResumeState {
   // Slices
+  resumeId: string;
   title: string;
   socialHandles: Array<SocialHandle>;
   workExperience: WorkExperience;
@@ -103,11 +105,14 @@ interface ResumeState {
   updateAchievement: (index: number, patch: Partial<AchievementItem>) => void;
   removeAchievement: (index: number) => void;
 
-  hydrate: (data: ResumeOutput) => void;
+  hydrate: (data: ResumeOutput, resumeId?: string) => void;
+  setResumeId: (resumeId: string) => void;
+  getSnapshot: () => { resumeId: string; data: ResumeOutput };
 }
 
 const initialResumeData: Pick<
   ResumeState,
+  | 'resumeId'
   | 'title'
   | 'socialHandles'
   | 'workExperience'
@@ -117,6 +122,7 @@ const initialResumeData: Pick<
   | 'skills'
   | 'achievements'
 > = {
+  resumeId: '',
   title: 'Your Name',
   socialHandles: [
     { label: 'abc@example.com', link: '#use mailto: in the link' },
@@ -216,400 +222,474 @@ const initialResumeData: Pick<
   },
 };
 
-export const useResumeStore = create<ResumeState>((set) => ({
-  // initial state
-  ...initialResumeData,
+const dualStorage = createJSONStorage(() => {
+  if (typeof window === 'undefined') {
+    return {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+    };
+  }
 
-  // Title
-  setTitle: (value) => set({ title: value }),
+  return {
+    getItem: (name: string) =>
+      window.localStorage.getItem(name) ?? window.sessionStorage.getItem(name),
+    setItem: (name: string, value: string) => {
+      window.localStorage.setItem(name, value);
+      window.sessionStorage.setItem(name, value);
+    },
+    removeItem: (name: string) => {
+      window.localStorage.removeItem(name);
+      window.sessionStorage.removeItem(name);
+    },
+  };
+});
 
-  // Social Handles
-  setSocialHandles: (handles) => set({ socialHandles: handles }),
-  updateSocialHandleAt: (index, patch) =>
-    set((state) => ({
-      socialHandles: state.socialHandles.map((h, i) =>
-        i === index ? { ...h, ...patch } : h,
-      ),
-    })),
-  addSocialHandle: (item) =>
-    set((state) => ({
-      socialHandles: [...state.socialHandles, item ?? { label: '', link: '' }],
-    })),
-  removeSocialHandleAt: (index) =>
-    set((state) => ({
-      socialHandles: state.socialHandles.filter((_, i) => i !== index),
-    })),
+export const useResumeStore = create<ResumeState>()(
+  persist(
+    (set, get) => ({
+      // initial state
+      ...initialResumeData,
 
-  // Work Experience
-  setWorkExperienceTitle: (value) =>
-    set((state) => ({
-      workExperience: { ...state.workExperience, title: value },
-    })),
-  addExperience: (item) =>
-    set((state) => ({
-      workExperience: {
-        ...state.workExperience,
-        experience: [
-          ...state.workExperience.experience,
-          item ?? {
-            companyName: '',
-            jobTitle: '',
-            startDate: '',
-            endDate: '',
-            description: [''],
+      // Title
+      setTitle: (value) => set({ title: value }),
+
+      // Social Handles
+      setSocialHandles: (handles) => set({ socialHandles: handles }),
+      updateSocialHandleAt: (index, patch) =>
+        set((state) => ({
+          socialHandles: state.socialHandles.map((h, i) =>
+            i === index ? { ...h, ...patch } : h,
+          ),
+        })),
+      addSocialHandle: (item) =>
+        set((state) => ({
+          socialHandles: [
+            ...state.socialHandles,
+            item ?? { label: '', link: '' },
+          ],
+        })),
+      removeSocialHandleAt: (index) =>
+        set((state) => ({
+          socialHandles: state.socialHandles.filter((_, i) => i !== index),
+        })),
+
+      // Work Experience
+      setWorkExperienceTitle: (value) =>
+        set((state) => ({
+          workExperience: { ...state.workExperience, title: value },
+        })),
+      addExperience: (item) =>
+        set((state) => ({
+          workExperience: {
+            ...state.workExperience,
+            experience: [
+              ...state.workExperience.experience,
+              item ?? {
+                companyName: '',
+                jobTitle: '',
+                startDate: '',
+                endDate: '',
+                description: [''],
+              },
+            ],
           },
-        ],
-      },
-    })),
-  updateExperience: (index, patch) =>
-    set((state) => ({
-      workExperience: {
-        ...state.workExperience,
-        experience: state.workExperience.experience.map((e, i) =>
-          i === index ? { ...e, ...patch } : e,
-        ),
-      },
-    })),
-  removeExperience: (index) =>
-    set((state) => ({
-      workExperience: {
-        ...state.workExperience,
-        experience: state.workExperience.experience.filter(
-          (_, i) => i !== index,
-        ),
-      },
-    })),
-  addExperienceDescription: (expIndex, value) =>
-    set((state) => ({
-      workExperience: {
-        ...state.workExperience,
-        experience: state.workExperience.experience.map((e, i) =>
-          i === expIndex
-            ? { ...e, description: [...e.description, value ?? ''] }
-            : e,
-        ),
-      },
-    })),
-  updateExperienceDescription: (expIndex, descIndex, value) =>
-    set((state) => ({
-      workExperience: {
-        ...state.workExperience,
-        experience: state.workExperience.experience.map((e, i) => {
-          if (i !== expIndex) return e;
-          const next = [...e.description];
-          next[descIndex] = value;
-          return { ...e, description: next };
-        }),
-      },
-    })),
-  removeExperienceDescription: (expIndex, descIndex) =>
-    set((state) => ({
-      workExperience: {
-        ...state.workExperience,
-        experience: state.workExperience.experience.map((e, i) =>
-          i === expIndex
-            ? {
-                ...e,
-                description: e.description.filter((_, di) => di !== descIndex),
-              }
-            : e,
-        ),
-      },
-    })),
-
-  // Projects
-  setProjectsTitle: (value) =>
-    set((state) => ({ projects: { ...state.projects, title: value } })),
-  addProject: (item) =>
-    set((state) => ({
-      projects: {
-        ...state.projects,
-        projects: [
-          ...state.projects.projects,
-          item ?? {
-            organizationName: '',
-            projectTitle: '',
-            startDate: '',
-            endDate: '',
-            description: [''],
+        })),
+      updateExperience: (index, patch) =>
+        set((state) => ({
+          workExperience: {
+            ...state.workExperience,
+            experience: state.workExperience.experience.map((e, i) =>
+              i === index ? { ...e, ...patch } : e,
+            ),
           },
-        ],
-      },
-    })),
-  updateProject: (index, patch) =>
-    set((state) => ({
-      projects: {
-        ...state.projects,
-        projects: state.projects.projects.map((p, i) =>
-          i === index ? { ...p, ...patch } : p,
-        ),
-      },
-    })),
-  removeProject: (index) =>
-    set((state) => ({
-      projects: {
-        ...state.projects,
-        projects: state.projects.projects.filter((_, i) => i !== index),
-      },
-    })),
-  addProjectDescription: (projIndex, value) =>
-    set((state) => ({
-      projects: {
-        ...state.projects,
-        projects: state.projects.projects.map((p, i) =>
-          i === projIndex
-            ? { ...p, description: [...p.description, value ?? ''] }
-            : p,
-        ),
-      },
-    })),
-  updateProjectDescription: (projIndex, descIndex, value) =>
-    set((state) => ({
-      projects: {
-        ...state.projects,
-        projects: state.projects.projects.map((p, i) => {
-          if (i !== projIndex) return p;
-          const next = [...p.description];
-          next[descIndex] = value;
-          return { ...p, description: next };
-        }),
-      },
-    })),
-  removeProjectDescription: (projIndex, descIndex) =>
-    set((state) => ({
-      projects: {
-        ...state.projects,
-        projects: state.projects.projects.map((p, i) =>
-          i === projIndex
-            ? {
-                ...p,
-                description: p.description.filter((_, di) => di !== descIndex),
-              }
-            : p,
-        ),
-      },
-    })),
-
-  // Education
-  setEducationTitle: (value) =>
-    set((state) => ({ education: { ...state.education, title: value } })),
-  addCourse: (item) =>
-    set((state) => ({
-      education: {
-        ...state.education,
-        courses: [
-          ...state.education.courses,
-          item ?? {
-            courseName: '',
-            institutionName: '',
-            startDate: '',
-            endDate: '',
-            scoreEarned: '',
-            description: '',
+        })),
+      removeExperience: (index) =>
+        set((state) => ({
+          workExperience: {
+            ...state.workExperience,
+            experience: state.workExperience.experience.filter(
+              (_, i) => i !== index,
+            ),
           },
-        ],
-      },
-    })),
-  updateCourse: (index, patch) =>
-    set((state) => ({
-      education: {
-        ...state.education,
-        courses: state.education.courses.map((c, i) =>
-          i === index ? { ...c, ...patch } : c,
-        ),
-      },
-    })),
-  removeCourse: (index) =>
-    set((state) => ({
-      education: {
-        ...state.education,
-        courses: state.education.courses.filter((_, i) => i !== index),
-      },
-    })),
-
-  // Activities
-  setActivitiesTitle: (value) =>
-    set((state) => ({ activities: { ...state.activities, title: value } })),
-  addActivity: (item) =>
-    set((state) => ({
-      activities: {
-        ...state.activities,
-        activities: [
-          ...state.activities.activities,
-          item ?? {
-            activityTitle: '',
-            institutionName: '',
-            startDate: '',
-            endDate: '',
-            descriptions: [''],
+        })),
+      addExperienceDescription: (expIndex, value) =>
+        set((state) => ({
+          workExperience: {
+            ...state.workExperience,
+            experience: state.workExperience.experience.map((e, i) =>
+              i === expIndex
+                ? { ...e, description: [...e.description, value ?? ''] }
+                : e,
+            ),
           },
-        ],
-      },
-    })),
-  updateActivity: (index, patch) =>
-    set((state) => ({
-      activities: {
-        ...state.activities,
-        activities: state.activities.activities.map((a, i) =>
-          i === index ? { ...a, ...patch } : a,
-        ),
-      },
-    })),
-  removeActivity: (index) =>
-    set((state) => ({
-      activities: {
-        ...state.activities,
-        activities: state.activities.activities.filter((_, i) => i !== index),
-      },
-    })),
-  addActivityDescription: (actIndex, value) =>
-    set((state) => ({
-      activities: {
-        ...state.activities,
-        activities: state.activities.activities.map((a, i) =>
-          i === actIndex
-            ? { ...a, descriptions: [...a.descriptions, value ?? ''] }
-            : a,
-        ),
-      },
-    })),
-  updateActivityDescription: (actIndex, descIndex, value) =>
-    set((state) => ({
-      activities: {
-        ...state.activities,
-        activities: state.activities.activities.map((a, i) => {
-          if (i !== actIndex) return a;
-          const next = [...a.descriptions];
-          next[descIndex] = value;
-          return { ...a, descriptions: next };
-        }),
-      },
-    })),
-  removeActivityDescription: (actIndex, descIndex) =>
-    set((state) => ({
-      activities: {
-        ...state.activities,
-        activities: state.activities.activities.map((a, i) =>
-          i === actIndex
-            ? {
-                ...a,
-                descriptions: a.descriptions.filter(
-                  (_, di) => di !== descIndex,
-                ),
-              }
-            : a,
-        ),
-      },
-    })),
-
-  // Skills
-  setSkillsTitle: (value) =>
-    set((state) => ({ skills: { ...state.skills, title: value } })),
-  addSkillSet: (item) =>
-    set((state) => ({
-      skills: {
-        ...state.skills,
-        skillSet: [
-          ...state.skills.skillSet,
-          item ?? { title: '', skills: [''] },
-        ],
-      },
-    })),
-  updateSkillSet: (index, patch) =>
-    set((state) => ({
-      skills: {
-        ...state.skills,
-        skillSet: state.skills.skillSet.map((s, i) =>
-          i === index ? { ...s, ...patch } : s,
-        ),
-      },
-    })),
-  removeSkillSet: (index) =>
-    set((state) => ({
-      skills: {
-        ...state.skills,
-        skillSet: state.skills.skillSet.filter((_, i) => i !== index),
-      },
-    })),
-  addSkillToSet: (setIndex, value) =>
-    set((state) => ({
-      skills: {
-        ...state.skills,
-        skillSet: state.skills.skillSet.map((s, i) =>
-          i === setIndex ? { ...s, skills: [...s.skills, value ?? ''] } : s,
-        ),
-      },
-    })),
-  updateSkillInSet: (setIndex, skillIndex, value) =>
-    set((state) => ({
-      skills: {
-        ...state.skills,
-        skillSet: state.skills.skillSet.map((s, i) => {
-          if (i !== setIndex) return s;
-          const next = [...s.skills];
-          next[skillIndex] = value;
-          return { ...s, skills: next };
-        }),
-      },
-    })),
-  removeSkillFromSet: (setIndex, skillIndex) =>
-    set((state) => ({
-      skills: {
-        ...state.skills,
-        skillSet: state.skills.skillSet.map((s, i) =>
-          i === setIndex
-            ? { ...s, skills: s.skills.filter((_, si) => si !== skillIndex) }
-            : s,
-        ),
-      },
-    })),
-
-  // Achievements
-  setAchievementsTitle: (value) =>
-    set((state) => ({ achievements: { ...state.achievements, title: value } })),
-  addAchievement: (item) =>
-    set((state) => ({
-      achievements: {
-        ...state.achievements,
-        achievementList: [
-          ...state.achievements.achievementList,
-          item ?? {
-            awardName: '',
-            institutionName: '',
-            dateAwarded: '',
-            description: '',
+        })),
+      updateExperienceDescription: (expIndex, descIndex, value) =>
+        set((state) => ({
+          workExperience: {
+            ...state.workExperience,
+            experience: state.workExperience.experience.map((e, i) => {
+              if (i !== expIndex) return e;
+              const next = [...e.description];
+              next[descIndex] = value;
+              return { ...e, description: next };
+            }),
           },
-        ],
-      },
-    })),
-  updateAchievement: (index, patch) =>
-    set((state) => ({
-      achievements: {
-        ...state.achievements,
-        achievementList: state.achievements.achievementList.map((a, i) =>
-          i === index ? { ...a, ...patch } : a,
-        ),
-      },
-    })),
-  removeAchievement: (index) =>
-    set((state) => ({
-      achievements: {
-        ...state.achievements,
-        achievementList: state.achievements.achievementList.filter(
-          (_, i) => i !== index,
-        ),
-      },
-    })),
+        })),
+      removeExperienceDescription: (expIndex, descIndex) =>
+        set((state) => ({
+          workExperience: {
+            ...state.workExperience,
+            experience: state.workExperience.experience.map((e, i) =>
+              i === expIndex
+                ? {
+                    ...e,
+                    description: e.description.filter(
+                      (_, di) => di !== descIndex,
+                    ),
+                  }
+                : e,
+            ),
+          },
+        })),
 
-  hydrate: (data) =>
-    set(() => ({
-      title: data.title,
-      socialHandles: data.socialHandles,
-      workExperience: data.workExperience,
-      projects: data.projects,
-      education: data.education,
-      activities: data.activities,
-      skills: data.skills,
-      achievements: data.achievements,
-    })),
-}));
+      // Projects
+      setProjectsTitle: (value) =>
+        set((state) => ({ projects: { ...state.projects, title: value } })),
+      addProject: (item) =>
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            projects: [
+              ...state.projects.projects,
+              item ?? {
+                organizationName: '',
+                projectTitle: '',
+                startDate: '',
+                endDate: '',
+                description: [''],
+              },
+            ],
+          },
+        })),
+      updateProject: (index, patch) =>
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            projects: state.projects.projects.map((p, i) =>
+              i === index ? { ...p, ...patch } : p,
+            ),
+          },
+        })),
+      removeProject: (index) =>
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            projects: state.projects.projects.filter((_, i) => i !== index),
+          },
+        })),
+      addProjectDescription: (projIndex, value) =>
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            projects: state.projects.projects.map((p, i) =>
+              i === projIndex
+                ? { ...p, description: [...p.description, value ?? ''] }
+                : p,
+            ),
+          },
+        })),
+      updateProjectDescription: (projIndex, descIndex, value) =>
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            projects: state.projects.projects.map((p, i) => {
+              if (i !== projIndex) return p;
+              const next = [...p.description];
+              next[descIndex] = value;
+              return { ...p, description: next };
+            }),
+          },
+        })),
+      removeProjectDescription: (projIndex, descIndex) =>
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            projects: state.projects.projects.map((p, i) =>
+              i === projIndex
+                ? {
+                    ...p,
+                    description: p.description.filter(
+                      (_, di) => di !== descIndex,
+                    ),
+                  }
+                : p,
+            ),
+          },
+        })),
+
+      // Education
+      setEducationTitle: (value) =>
+        set((state) => ({ education: { ...state.education, title: value } })),
+      addCourse: (item) =>
+        set((state) => ({
+          education: {
+            ...state.education,
+            courses: [
+              ...state.education.courses,
+              item ?? {
+                courseName: '',
+                institutionName: '',
+                startDate: '',
+                endDate: '',
+                scoreEarned: '',
+                description: '',
+              },
+            ],
+          },
+        })),
+      updateCourse: (index, patch) =>
+        set((state) => ({
+          education: {
+            ...state.education,
+            courses: state.education.courses.map((c, i) =>
+              i === index ? { ...c, ...patch } : c,
+            ),
+          },
+        })),
+      removeCourse: (index) =>
+        set((state) => ({
+          education: {
+            ...state.education,
+            courses: state.education.courses.filter((_, i) => i !== index),
+          },
+        })),
+
+      // Activities
+      setActivitiesTitle: (value) =>
+        set((state) => ({ activities: { ...state.activities, title: value } })),
+      addActivity: (item) =>
+        set((state) => ({
+          activities: {
+            ...state.activities,
+            activities: [
+              ...state.activities.activities,
+              item ?? {
+                activityTitle: '',
+                institutionName: '',
+                startDate: '',
+                endDate: '',
+                descriptions: [''],
+              },
+            ],
+          },
+        })),
+      updateActivity: (index, patch) =>
+        set((state) => ({
+          activities: {
+            ...state.activities,
+            activities: state.activities.activities.map((a, i) =>
+              i === index ? { ...a, ...patch } : a,
+            ),
+          },
+        })),
+      removeActivity: (index) =>
+        set((state) => ({
+          activities: {
+            ...state.activities,
+            activities: state.activities.activities.filter(
+              (_, i) => i !== index,
+            ),
+          },
+        })),
+      addActivityDescription: (actIndex, value) =>
+        set((state) => ({
+          activities: {
+            ...state.activities,
+            activities: state.activities.activities.map((a, i) =>
+              i === actIndex
+                ? { ...a, descriptions: [...a.descriptions, value ?? ''] }
+                : a,
+            ),
+          },
+        })),
+      updateActivityDescription: (actIndex, descIndex, value) =>
+        set((state) => ({
+          activities: {
+            ...state.activities,
+            activities: state.activities.activities.map((a, i) => {
+              if (i !== actIndex) return a;
+              const next = [...a.descriptions];
+              next[descIndex] = value;
+              return { ...a, descriptions: next };
+            }),
+          },
+        })),
+      removeActivityDescription: (actIndex, descIndex) =>
+        set((state) => ({
+          activities: {
+            ...state.activities,
+            activities: state.activities.activities.map((a, i) =>
+              i === actIndex
+                ? {
+                    ...a,
+                    descriptions: a.descriptions.filter(
+                      (_, di) => di !== descIndex,
+                    ),
+                  }
+                : a,
+            ),
+          },
+        })),
+
+      // Skills
+      setSkillsTitle: (value) =>
+        set((state) => ({ skills: { ...state.skills, title: value } })),
+      addSkillSet: (item) =>
+        set((state) => ({
+          skills: {
+            ...state.skills,
+            skillSet: [
+              ...state.skills.skillSet,
+              item ?? { title: '', skills: [''] },
+            ],
+          },
+        })),
+      updateSkillSet: (index, patch) =>
+        set((state) => ({
+          skills: {
+            ...state.skills,
+            skillSet: state.skills.skillSet.map((s, i) =>
+              i === index ? { ...s, ...patch } : s,
+            ),
+          },
+        })),
+      removeSkillSet: (index) =>
+        set((state) => ({
+          skills: {
+            ...state.skills,
+            skillSet: state.skills.skillSet.filter((_, i) => i !== index),
+          },
+        })),
+      addSkillToSet: (setIndex, value) =>
+        set((state) => ({
+          skills: {
+            ...state.skills,
+            skillSet: state.skills.skillSet.map((s, i) =>
+              i === setIndex ? { ...s, skills: [...s.skills, value ?? ''] } : s,
+            ),
+          },
+        })),
+      updateSkillInSet: (setIndex, skillIndex, value) =>
+        set((state) => ({
+          skills: {
+            ...state.skills,
+            skillSet: state.skills.skillSet.map((s, i) => {
+              if (i !== setIndex) return s;
+              const next = [...s.skills];
+              next[skillIndex] = value;
+              return { ...s, skills: next };
+            }),
+          },
+        })),
+      removeSkillFromSet: (setIndex, skillIndex) =>
+        set((state) => ({
+          skills: {
+            ...state.skills,
+            skillSet: state.skills.skillSet.map((s, i) =>
+              i === setIndex
+                ? {
+                    ...s,
+                    skills: s.skills.filter((_, si) => si !== skillIndex),
+                  }
+                : s,
+            ),
+          },
+        })),
+
+      // Achievements
+      setAchievementsTitle: (value) =>
+        set((state) => ({
+          achievements: { ...state.achievements, title: value },
+        })),
+      addAchievement: (item) =>
+        set((state) => ({
+          achievements: {
+            ...state.achievements,
+            achievementList: [
+              ...state.achievements.achievementList,
+              item ?? {
+                awardName: '',
+                institutionName: '',
+                dateAwarded: '',
+                description: '',
+              },
+            ],
+          },
+        })),
+      updateAchievement: (index, patch) =>
+        set((state) => ({
+          achievements: {
+            ...state.achievements,
+            achievementList: state.achievements.achievementList.map((a, i) =>
+              i === index ? { ...a, ...patch } : a,
+            ),
+          },
+        })),
+      removeAchievement: (index) =>
+        set((state) => ({
+          achievements: {
+            ...state.achievements,
+            achievementList: state.achievements.achievementList.filter(
+              (_, i) => i !== index,
+            ),
+          },
+        })),
+
+      setResumeId: (resumeId) => set({ resumeId }),
+      hydrate: (data, resumeId) =>
+        set(() => ({
+          resumeId: resumeId ?? get().resumeId,
+          title: data.title,
+          socialHandles: data.socialHandles,
+          workExperience: data.workExperience,
+          projects: data.projects,
+          education: data.education,
+          activities: data.activities,
+          skills: data.skills,
+          achievements: data.achievements,
+        })),
+      getSnapshot: () => {
+        const state = get();
+        return {
+          resumeId: state.resumeId,
+          data: {
+            title: state.title,
+            socialHandles: state.socialHandles,
+            workExperience: state.workExperience,
+            projects: state.projects,
+            education: state.education,
+            activities: state.activities,
+            skills: state.skills,
+            achievements: state.achievements,
+          },
+        };
+      },
+    }),
+    {
+      name: 'resume-builder-state',
+      storage: dualStorage,
+      partialize: (state) => ({
+        resumeId: state.resumeId,
+        title: state.title,
+        socialHandles: state.socialHandles,
+        workExperience: state.workExperience,
+        projects: state.projects,
+        education: state.education,
+        activities: state.activities,
+        skills: state.skills,
+        achievements: state.achievements,
+      }),
+    },
+  ),
+);

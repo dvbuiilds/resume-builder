@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
@@ -31,6 +32,18 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+  CREATE TABLE IF NOT EXISTS user_resumes (
+    id TEXT PRIMARY KEY,
+    userId TEXT NOT NULL,
+    resumeId TEXT NOT NULL,
+    data TEXT NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(userId, resumeId)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_user_resumes_user ON user_resumes(userId, updatedAt);
 `);
 
 export interface User {
@@ -75,6 +88,72 @@ export const dbOperations = {
       image: user.image || null,
       createdAt: now,
     };
+  },
+
+  getUserResumes: (
+    userId: string,
+  ): Array<{
+    id: string;
+    resumeId: string;
+    data: string;
+    updatedAt: number;
+  }> => {
+    const stmt = db.prepare(
+      'SELECT id, resumeId, data, updatedAt FROM user_resumes WHERE userId = ? ORDER BY updatedAt DESC LIMIT 2',
+    );
+    return stmt.all(userId) as Array<{
+      id: string;
+      resumeId: string;
+      data: string;
+      updatedAt: number;
+    }>;
+  },
+
+  upsertUserResume: (
+    userId: string,
+    options: { resumeRowId?: string; resumeId: string; data: string },
+  ): void => {
+    const now = Date.now();
+
+    const existingStmt = db.prepare(
+      'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
+    );
+    const existing = existingStmt.get(userId, options.resumeId) as
+      | { id: string }
+      | undefined;
+
+    const upsert = db.transaction(() => {
+      if (existing) {
+        const updateStmt = db.prepare(
+          'UPDATE user_resumes SET data = ?, updatedAt = ? WHERE id = ?',
+        );
+        updateStmt.run(options.data, now, existing.id);
+      } else {
+        const insertStmt = db.prepare(
+          'INSERT INTO user_resumes (id, userId, resumeId, data, updatedAt) VALUES (?, ?, ?, ?, ?)',
+        );
+        const rowId = options.resumeRowId ?? crypto.randomUUID();
+        insertStmt.run(rowId, userId, options.resumeId, options.data, now);
+      }
+
+      const rows = db
+        .prepare(
+          'SELECT id FROM user_resumes WHERE userId = ? ORDER BY updatedAt DESC',
+        )
+        .all(userId) as Array<{ id: string }>;
+
+      if (rows.length > 2) {
+        const idsToDelete = rows.slice(2).map((row) => row.id);
+        const deleteStmt = db.prepare(
+          `DELETE FROM user_resumes WHERE id IN (${idsToDelete
+            .map(() => '?')
+            .join(',')})`,
+        );
+        deleteStmt.run(...idsToDelete);
+      }
+    });
+
+    upsert();
   },
 
   // Find user by email
