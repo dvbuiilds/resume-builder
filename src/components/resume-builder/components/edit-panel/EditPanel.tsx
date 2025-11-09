@@ -206,19 +206,14 @@ export const EditPanel: React.FC = () => {
     <div className="relative h-screen w-full overflow-y-auto rounded-md border border-gray-200 bg-white px-3 pb-2 scrollbar-hide">
       <div className="sticky top-0 z-10 mb-4 flex flex-row items-center justify-between bg-white py-2 shadow-sm">
         <p className="text-xl font-semibold">Edit Panel</p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-          >
-            {isSaving ? 'Saving...' : 'Save'}
-          </button>
-          <div className="flex h-[20px] w-[20px] items-center justify-center rounded-xl bg-gray-300">
-            <ButtonWithCrossIcon onClick={closeEditPanel} />
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={isSaving}
+          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+        >
+          {isSaving ? 'Saving...' : 'Save'}
+        </button>
       </div>
 
       {saveFeedback ? (

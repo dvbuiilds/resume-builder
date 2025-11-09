@@ -18,7 +18,8 @@ import type {
 } from '../types/resume-data';
 import type { ResumeOutput } from '../types/pdf-transform-schema';
 
-type SetState<T> = (partial: T | ((state: T) => T)) => void;
+const cloneInitialResumeData = (): typeof initialResumeData =>
+  JSON.parse(JSON.stringify(initialResumeData));
 
 interface ResumeState {
   // Slices
@@ -108,6 +109,7 @@ interface ResumeState {
   hydrate: (data: ResumeOutput, resumeId?: string) => void;
   setResumeId: (resumeId: string) => void;
   getSnapshot: () => { resumeId: string; data: ResumeOutput };
+  resetToInitial: () => void;
 }
 
 const initialResumeData: Pick<
@@ -647,6 +649,15 @@ export const useResumeStore = create<ResumeState>()(
         })),
 
       setResumeId: (resumeId) => set({ resumeId }),
+      resetToInitial: () =>
+        set(() => {
+          const base = cloneInitialResumeData();
+          const { resumeId: _ignored, ...rest } = base;
+          return {
+            resumeId: '',
+            ...rest,
+          };
+        }),
       hydrate: (data, resumeId) =>
         set(() => ({
           resumeId: resumeId ?? get().resumeId,

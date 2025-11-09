@@ -50,6 +50,10 @@ export const hydrateResumeFromHistory = (
   return parsed;
 };
 
+export const resetResumeToInitial = () => {
+  useResumeStore.getState().resetToInitial();
+};
+
 export const resetResumeId = () => {
   useResumeStore.getState().setResumeId('');
 };

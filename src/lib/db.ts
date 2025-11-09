@@ -3,6 +3,8 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
+const MAX_RESUMES_PER_USER = 4;
+
 // Get database path from environment or use default
 const dbPath =
   process.env.DATABASE_PATH ||
@@ -99,9 +101,9 @@ export const dbOperations = {
     updatedAt: number;
   }> => {
     const stmt = db.prepare(
-      'SELECT id, resumeId, data, updatedAt FROM user_resumes WHERE userId = ? ORDER BY updatedAt DESC LIMIT 2',
+      'SELECT id, resumeId, data, updatedAt FROM user_resumes WHERE userId = ? ORDER BY updatedAt DESC LIMIT ?',
     );
-    return stmt.all(userId) as Array<{
+    return stmt.all(userId, MAX_RESUMES_PER_USER) as Array<{
       id: string;
       resumeId: string;
       data: string;
@@ -142,8 +144,10 @@ export const dbOperations = {
         )
         .all(userId) as Array<{ id: string }>;
 
-      if (rows.length > 2) {
-        const idsToDelete = rows.slice(2).map((row) => row.id);
+      if (rows.length > MAX_RESUMES_PER_USER) {
+        const idsToDelete = rows
+          .slice(MAX_RESUMES_PER_USER)
+          .map((row) => row.id);
         const deleteStmt = db.prepare(
           `DELETE FROM user_resumes WHERE id IN (${idsToDelete
             .map(() => '?')

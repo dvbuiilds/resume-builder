@@ -17,7 +17,7 @@ import type { ResumeOutput } from '@/components/resume-builder/types/pdf-transfo
 import fetchWithTimeout from '@/utils/fetchWithTimeout';
 import {
   getOrCreateResumeId,
-  resetResumeId,
+  resetResumeToInitial,
 } from '@/components/resume-builder/store/resumePersistence';
 
 const API_TIMEOUT_MS = 120_000;
@@ -163,7 +163,7 @@ const Home: React.FC = () => {
         setIsExtracting(false);
       }
     },
-    [isAuthenticated, persistPendingUpload],
+    [isAuthenticated],
   );
 
   const handleCreateResume = useCallback(async () => {
@@ -186,18 +186,21 @@ const Home: React.FC = () => {
 
     if (isCreating) return;
 
+    setError(null);
+
+    resetResumeToInitial();
+    persistPendingUpload(null);
+
+    const newResumeId = getOrCreateResumeId();
     const trimmedText = extractedText.trim();
+
     if (!trimmedText) {
-      setError(null);
-      resetResumeId();
-      getOrCreateResumeId();
+      setIsCreating(false);
       router.push('/resume-builder');
       return;
     }
 
-    setError(null);
     setIsCreating(true);
-    persistPendingUpload(null);
 
     try {
       const response = await fetchWithTimeout(
@@ -223,8 +226,6 @@ const Home: React.FC = () => {
         throw new Error(message);
       }
 
-      resetResumeId();
-      const newResumeId = getOrCreateResumeId();
       hydrateResume(payload.data, newResumeId);
       router.push('/resume-builder');
     } catch (err) {
@@ -237,16 +238,12 @@ const Home: React.FC = () => {
     } finally {
       setIsCreating(false);
     }
-  }, [
-    extractedText,
-    fileDataUrl,
-    hydrateResume,
-    isAuthenticated,
-    isCreating,
-    persistPendingUpload,
-    router,
-    selectedFile,
-  ]);
+  }, [extractedText, fileDataUrl, isAuthenticated, isCreating]);
+
+  const handleContinueExisting = useCallback(() => {
+    setError(null);
+    router.push('/resume-builder');
+  }, [router]);
 
   const restorePendingUpload = useCallback(async () => {
     if (!storage || hasRestoredUpload.current) return;
@@ -284,10 +281,12 @@ const Home: React.FC = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
     restorePendingUpload();
-  }, [isAuthenticated, restorePendingUpload]);
+  }, [isAuthenticated]);
 
   const isButtonDisabled =
     isExtracting || isCreating || authStatus === 'loading';
+
+  const showAuthActions = isAuthenticated;
 
   return (
     <div className="max-w-xl mx-auto p-8">
@@ -319,20 +318,30 @@ const Home: React.FC = () => {
           ) : null}
         </div>
       </div>
-      <button
-        onClick={handleCreateResume}
-        className="w-full py-4 bg-blue-600 text-white text-xl font-semibold rounded-lg shadow-md hover:bg-blue-700 transition disabled:opacity-60 flex justify-center items-center gap-3 mb-6"
-        disabled={isButtonDisabled}
-      >
-        {isCreating ? (
-          <span className="inline-flex items-center gap-3">
-            <span className="animate-spin w-6 h-6 border-4 border-white border-t-blue-600 rounded-full inline-block" />
-            Creating Resume...
-          </span>
-        ) : (
-          'Create New Resume'
-        )}
-      </button>
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+        <button
+          onClick={handleCreateResume}
+          className="flex-1 py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-blue-700 transition disabled:opacity-60 flex justify-center items-center gap-3"
+          disabled={isButtonDisabled}
+        >
+          {isCreating ? (
+            <span className="inline-flex items-center gap-3">
+              <span className="animate-spin w-6 h-6 border-4 border-white border-t-blue-600 rounded-full inline-block" />
+              Creating Resume...
+            </span>
+          ) : (
+            'Create New Resume'
+          )}
+        </button>
+        {showAuthActions ? (
+          <button
+            onClick={handleContinueExisting}
+            className="flex-1 py-4 bg-gray-200 text-gray-800 text-lg font-semibold rounded-lg shadow-md hover:bg-gray-300 transition"
+          >
+            Continue Existing
+          </button>
+        ) : null}
+      </div>
       {error ? (
         <div
           role="alert"
