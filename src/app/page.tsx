@@ -3,6 +3,7 @@
 import React, { ChangeEvent, useState } from 'react';
 import pdfToText from 'react-pdftotext';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 import { useResumeStore } from '@/components/resume-builder/store/resumeStore';
 import type { ResumeOutput } from '@/components/resume-builder/types/pdf-transform-schema';
@@ -12,6 +13,7 @@ const API_TIMEOUT_MS = 120_000;
 
 export default function Home() {
   const router = useRouter();
+  const { status: authStatus } = useSession();
   const hydrateResume = useResumeStore((state) => state.hydrate);
 
   const [extractedText, setExtractedText] = useState('');
@@ -45,7 +47,18 @@ export default function Home() {
     }
   };
 
+  const isAuthenticated = authStatus === 'authenticated';
+
   const handleCreateResume = async () => {
+    if (!isAuthenticated) {
+      const message = 'Please sign in to create a resume.';
+      setError(message);
+      if (typeof window !== 'undefined') {
+        window.alert(message);
+      }
+      return;
+    }
+
     if (isCreating) return;
 
     if (!extractedText.trim()) {
@@ -94,8 +107,7 @@ export default function Home() {
     }
   };
 
-  const isButtonDisabled =
-    isExtracting || isCreating || !selectedFile || !extractedText.trim();
+  const isButtonDisabled = isExtracting || isCreating || !selectedFile;
 
   return (
     <div className="max-w-xl mx-auto p-8">
@@ -145,14 +157,6 @@ export default function Home() {
           className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
         >
           {error}
-        </div>
-      ) : null}
-      {extractedText && !isExtracting && !isCreating ? (
-        <div className="mt-4">
-          <h3 className="text-lg font-medium mb-2">Extracted Text:</h3>
-          <pre className="bg-gray-200 rounded p-4 whitespace-pre-wrap max-h-[300px] overflow-y-auto text-xs sm:text-sm">
-            {extractedText}
-          </pre>
         </div>
       ) : null}
     </div>
