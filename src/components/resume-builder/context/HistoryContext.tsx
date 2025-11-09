@@ -65,9 +65,13 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({
         setEntries([]);
       }
     } catch (err) {
+      const fallbackMessage = 'Something went wrong. Please try again.';
       const message =
         err instanceof Error ? err.message : 'Failed to load past resumes.';
-      setError(message);
+      const finalMessage = /timed out|timeout/i.test(message)
+        ? fallbackMessage
+        : message || fallbackMessage;
+      setError(finalMessage);
     } finally {
       setLoading(false);
     }
