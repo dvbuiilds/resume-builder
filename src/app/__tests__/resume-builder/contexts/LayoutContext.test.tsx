@@ -1,12 +1,18 @@
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { LayoutProvider, useLayout } from '@/components/resume-builder/context/LayoutContext';
-import { SectionNameMapping } from '@/components/resume-builder/config/section-name-config';
+import {
+  LayoutProvider,
+  useLayout,
+} from '@resume-builder/components/resume-builder/context/LayoutContext';
+import { SectionNameMapping } from '@resume-builder/components/resume-builder/config/section-name-config';
 
 describe('LayoutContext', () => {
   describe('useLayout hook', () => {
     it('should throw error when used outside provider', () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       expect(() => {
         renderHook(() => useLayout());
@@ -104,7 +110,16 @@ describe('LayoutContext', () => {
         wrapper: LayoutProvider,
       });
 
-      const sections: Array<'title' | 'socialHandles' | 'education' | 'workExperience' | 'projects' | 'achievements' | 'activities' | 'skills'> = [
+      const sections: Array<
+        | 'title'
+        | 'socialHandles'
+        | 'education'
+        | 'workExperience'
+        | 'projects'
+        | 'achievements'
+        | 'activities'
+        | 'skills'
+      > = [
         'title',
         'socialHandles',
         'education',
@@ -294,4 +309,3 @@ describe('LayoutContext', () => {
     });
   });
 });
-

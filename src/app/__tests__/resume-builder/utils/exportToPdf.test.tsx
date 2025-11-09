@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { exportResumeToPdf } from '@/components/resume-builder/utils/exportToPdf';
+import { exportResumeToPdf } from '@resume-builder/components/resume-builder/utils/exportToPdf';
 import { completeResumeData } from '../test-utils/test-data';
 import {
   setupDOM,

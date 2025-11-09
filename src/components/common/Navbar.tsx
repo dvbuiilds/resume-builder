@@ -1,73 +1,123 @@
-import React from 'react';
-
-// Components
+'use client';
+import React, { useState } from 'react';
 import Image from 'next/image';
+import { FaUser } from 'react-icons/fa';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export const Navbar = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const handleAuthClick = () => {
+    router.push('/auth');
+  };
+
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    router.push('/');
+    router.refresh();
+  };
+
+  const renderUserImgOrInitials = () => {
+    if (session?.user?.image) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <Image
+          src={session.user.image}
+          alt={session.user.name || 'User'}
+          className="h-8 w-8 rounded-full object-cover"
+          width={32}
+          height={32}
+        />
+      );
+    }
+
+    return (
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
+        <FaUser className="h-4 w-4" />
+      </span>
+    );
+  };
+
   return (
-    <nav className="bg-white border-gray-200">
-      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-        <a
-          href="https://flowbite.com/"
-          className="flex items-center space-x-3 rtl:space-x-reverse"
-        >
-          <Image
-            src="https://flowbite.com/docs/images/logo.svg"
-            className="h-8"
-            width={50}
-            height={40}
-            alt="Flowbite Logo"
-          />
-          <span className="self-center text-2xl font-semibold whitespace-nowrap">
-            Dhairya Varshney
-          </span>
-        </a>
+    <nav className="border-b border-gray-200 bg-white">
+      <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-4 px-4 py-3">
         <button
-          data-collapse-toggle="navbar-default"
           type="button"
-          className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
-          aria-controls="navbar-default"
-          aria-expanded="false"
+          onClick={() => router.push('/')}
+          className="flex items-center gap-3 text-left"
         >
-          <span className="sr-only">Open main menu</span>
-          <svg
-            className="w-5 h-5"
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 17 14"
-          >
-            <path
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M1 1h15M1 7h15M1 13h15"
-            />
-          </svg>
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-lg font-bold text-white">
+            RB
+          </span>
+          <span className="text-xl font-semibold text-gray-900">
+            Resume Builder
+          </span>
         </button>
-        <div className="hidden w-full md:block md:w-auto" id="navbar-default">
-          <ul className="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white">
-            <li>
-              <a
-                href="#"
-                className="block py-2 px-3 text-white bg-blue-700 rounded md:bg-transparent md:text-blue-700 md:p-0"
-                aria-current="page"
+        <div className="flex items-center gap-4">
+          {status === 'loading' ? (
+            <div className="text-sm text-gray-500">Loading...</div>
+          ) : session ? (
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
               >
-                Home
-              </a>
-            </li>
-            <li>
-              <a
-                href="/resume-builder"
-                className="block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0"
-              >
-                Resume Builder
-              </a>
-            </li>
-          </ul>
+                {renderUserImgOrInitials()}
+                <span className="hidden sm:inline-block">
+                  {session.user?.name || session.user?.email || 'User'}
+                </span>
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {showUserMenu ? (
+                <div className="absolute right-0 mt-2 w-48 rounded-md border border-gray-200 bg-white py-2 shadow-lg z-50">
+                  <div className="border-b border-gray-200 px-4 pb-2">
+                    <p className="text-sm font-medium text-gray-900">
+                      {session.user?.name || 'User'}
+                    </p>
+                    <p className="truncate text-xs text-gray-500">
+                      {session.user?.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <button
+              onClick={handleAuthClick}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
+              Login / Signup
+            </button>
+          )}
         </div>
       </div>
+      {showUserMenu ? (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowUserMenu(false)}
+        />
+      ) : null}
     </nav>
   );
 };

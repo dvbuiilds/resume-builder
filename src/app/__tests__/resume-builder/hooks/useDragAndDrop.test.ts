@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useDragAndDrop } from '@/components/resume-builder/hooks/useDragAndDrop';
+import { useDragAndDrop } from '@resume-builder/components/resume-builder/hooks/useDragAndDrop';
 import type { DropResult } from '@hello-pangea/dnd';
 
 describe('useDragAndDrop', () => {

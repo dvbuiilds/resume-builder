@@ -3,11 +3,11 @@ import { renderHook, act } from '@testing-library/react';
 import {
   ResumeThemeProvider,
   useResumeTheme,
-} from '@/components/resume-builder/context/ResumeThemeContext';
+} from '@resume-builder/components/resume-builder/context/ResumeThemeContext';
 import {
   themeColorsReadOnly,
   themeFontsReadOnly,
-} from '@/components/resume-builder/config/theme-config';
+} from '@resume-builder/components/resume-builder/config/theme-config';
 
 describe('ResumeThemeContext', () => {
   describe('useResumeTheme hook', () => {

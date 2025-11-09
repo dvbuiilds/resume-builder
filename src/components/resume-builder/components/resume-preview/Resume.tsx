@@ -94,8 +94,6 @@ export const Resume = () => {
       style={{
         ...fontStyle,
         width: A4_SHEET_CONFIG.width,
-        scale: 1.2,
-        marginTop: 100,
       }}
     >
       <DragDropContext onDragEnd={onDragEnd}>
