@@ -1,4 +1,4 @@
-export type DisplayMode = 'edit' | 'preview';
+export type DisplayMode = 'edit' | 'history' | 'collapsed';
 
 export type ActiveSectionName =
   | ''

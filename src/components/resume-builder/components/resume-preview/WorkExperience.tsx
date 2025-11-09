@@ -1,22 +1,25 @@
 import React from 'react';
 
-// HOOKS
-import { useResumeData } from '../../context/ResumeDataContext';
-import { useResumeTheme } from '../../context/ResumeThemeContext';
-
 // TYPES
 import type { Experience } from '../../types/resume-data';
 
+// COMPONENTS
+import { HorizontalRule } from './HorizontalRule';
+
+// HOOKS
+import { useResumeStore } from '../../store/resumeStore';
+import { useResumeTheme } from '../../context/ResumeThemeContext';
+
 export const WorkExperience: React.FC = () => {
-  const { workExperience } = useResumeData();
+  const workExperience = useResumeStore((s) => s.workExperience);
   const { color } = useResumeTheme();
 
   return (
     <div className="my-1">
-      <h2 className="font-medium text-sm" style={{ color }}>
+      <h2 className="font-bold text-sm" style={{ color }}>
         {workExperience.title}
       </h2>
-      <hr className="w-full my-1" style={{ borderColor: color }} />
+      <HorizontalRule color={color} />
       {workExperience.experience.map((exp, index) => (
         <Experience key={`workExperience_${index}`} index={index} data={exp} />
       ))}
@@ -31,10 +34,10 @@ const Experience: React.FC<{ index: number; data: Experience }> = ({
   return (
     <div className="mb-1">
       <div className="flex justify-between">
-        <div className="font-medium text-xs">
+        <div className="font-bold text-xs">
           {data.companyName} - {data.jobTitle}
         </div>
-        <div className="font-medium text-xs">
+        <div className="font-bold text-xs">
           {data.startDate} — {data.endDate}
         </div>
       </div>
