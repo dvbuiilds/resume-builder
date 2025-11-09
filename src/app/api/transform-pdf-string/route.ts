@@ -1,14 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 import {
   getNewChatCompletionWithGroq,
   GroqTimeoutError,
 } from '@/llms/groq/groq';
 import { parseResumeOutput } from '@/lib/llm/transform-pdf-utils';
 import { withTimeout } from '@/utils/withTimeout';
+import { dbOperations } from '@/lib/db';
 
 const GROQ_TIMEOUT_MS = 120_000;
 
 export async function POST(req: NextRequest) {
+  const token = await getToken({ req });
+  const userId = token?.id as string | undefined;
+
+  if (!userId) {
+    return NextResponse.json(
+      { error: 'You must be signed in to transform a resume.' },
+      { status: 401 },
+    );
+  }
+
+  const currentUsage = dbOperations.getTransformUsage(userId);
+  if (currentUsage >= dbOperations.maxTransformUsage) {
+    return NextResponse.json(
+      {
+        error:
+          'You have reached the maximum number of resume transformations allowed. Please contact support if you need additional transforms.',
+      },
+      { status: 429 },
+    );
+  }
+
   try {
     const payload = await req.json();
     const input =
@@ -45,6 +68,8 @@ export async function POST(req: NextRequest) {
         { status: 422 },
       );
     }
+
+    dbOperations.incrementTransformUsage(userId);
 
     return NextResponse.json({ data }, { status: 200 });
   } catch (err: unknown) {

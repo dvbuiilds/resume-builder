@@ -4,6 +4,7 @@ import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
 const MAX_RESUMES_PER_USER = 4;
+const MAX_TRANSFORM_USAGE = 4;
 
 // Get database path from environment or use default
 const dbPath =
@@ -46,6 +47,12 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_user_resumes_user ON user_resumes(userId, updatedAt);
+
+  CREATE TABLE IF NOT EXISTS user_usage (
+    userId TEXT PRIMARY KEY,
+    transformUsage INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+  );
 `);
 
 export interface User {
@@ -159,6 +166,26 @@ export const dbOperations = {
 
     upsert();
   },
+
+  getTransformUsage: (userId: string): number => {
+    const stmt = db.prepare(
+      'SELECT transformUsage FROM user_usage WHERE userId = ?',
+    );
+    const row = stmt.get(userId) as { transformUsage: number } | undefined;
+    return row?.transformUsage ?? 0;
+  },
+
+  incrementTransformUsage: (userId: string) => {
+    const upsert = db.prepare(`
+      INSERT INTO user_usage (userId, transformUsage)
+      VALUES (?, 1)
+      ON CONFLICT(userId)
+      DO UPDATE SET transformUsage = transformUsage + 1
+    `);
+    upsert.run(userId);
+  },
+
+  maxTransformUsage: MAX_TRANSFORM_USAGE,
 
   // Find user by email
   findUserByEmail: (email: string): User | null => {
