@@ -15,6 +15,7 @@ import type {
   SkillSetItem,
   AchievementItem,
 } from '../types/resume-data';
+import type { ResumeOutput } from '../types/pdf-transform-schema';
 
 type SetState<T> = (partial: T | ((state: T) => T)) => void;
 
@@ -101,6 +102,8 @@ interface ResumeState {
   addAchievement: (item?: AchievementItem) => void;
   updateAchievement: (index: number, patch: Partial<AchievementItem>) => void;
   removeAchievement: (index: number) => void;
+
+  hydrate: (data: ResumeOutput) => void;
 }
 
 const initialResumeData: Pick<
@@ -596,5 +599,17 @@ export const useResumeStore = create<ResumeState>((set) => ({
           (_, i) => i !== index,
         ),
       },
+    })),
+
+  hydrate: (data) =>
+    set(() => ({
+      title: data.title,
+      socialHandles: data.socialHandles,
+      workExperience: data.workExperience,
+      projects: data.projects,
+      education: data.education,
+      activities: data.activities,
+      skills: data.skills,
+      achievements: data.achievements,
     })),
 }));
