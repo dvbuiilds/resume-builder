@@ -23,7 +23,7 @@ export const PDFAchievements: React.FC<PDFAchievementsProps> = ({
       <Text style={styles.heading}>{achievements.title}</Text>
       <View style={styles.horizontalRule} />
       {achievements.achievementList.map((achievement, index) => (
-        <View key={index} style={{ marginBottom: 10 }}>
+        <View key={index} style={{ marginBottom: 4 }}>
           <View style={styles.row}>
             <View style={styles.flex1}>
               <Text style={[styles.itemTitle, { fontWeight: 700 }]}>

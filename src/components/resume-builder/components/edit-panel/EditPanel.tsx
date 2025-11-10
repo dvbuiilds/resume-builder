@@ -202,8 +202,8 @@ export const EditPanel: React.FC = () => {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-y-auto rounded-md border border-gray-200 bg-white px-3 pb-2 scrollbar-hide">
-      <header className="sticky top-0 z-10 mb-4 flex items-center justify-between border-b border-gray-200 bg-white py-2">
+    <div className="relative h-screen w-full overflow-y-auto rounded-md bg-white px-3 pb-2 scrollbar-hide">
+      <header className="sticky top-0 z-10 mb-4 flex items-center justify-between bg-white py-2">
         <div className="flex items-center gap-2 text-gray-700">
           <p className="text-sm font-semibold uppercase tracking-wide">
             Edit Panel

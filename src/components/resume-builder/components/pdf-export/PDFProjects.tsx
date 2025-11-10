@@ -20,7 +20,7 @@ export const PDFProjects: React.FC<PDFProjectsProps> = ({
       <Text style={styles.heading}>{projects.title}</Text>
       <View style={styles.horizontalRule} />
       {projects.projects.map((project, index) => (
-        <View key={index} style={{ marginBottom: 10 }}>
+        <View key={index} style={{ marginBottom: 4 }}>
           <View style={styles.row}>
             <View style={styles.flex1}>
               <Text style={[styles.itemTitle, { fontWeight: 700 }]}>

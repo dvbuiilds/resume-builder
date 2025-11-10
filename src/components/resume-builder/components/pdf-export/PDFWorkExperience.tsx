@@ -20,7 +20,7 @@ export const PDFWorkExperience: React.FC<PDFWorkExperienceProps> = ({
       <Text style={styles.heading}>{workExperience.title}</Text>
       <View style={styles.horizontalRule} />
       {workExperience.experience.map((exp, index) => (
-        <View key={index} style={{ marginBottom: 10 }}>
+        <View key={index} style={{ marginBottom: 4 }}>
           <View style={styles.row}>
             <View style={styles.flex1}>
               <Text style={[styles.itemTitle, { fontWeight: 700 }]}>

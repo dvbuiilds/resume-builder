@@ -16,8 +16,7 @@ export const usePDFStyles = (
         ? 'Inter'
         : 'Times-Roman';
 
-  // Base font sizes (bump by +2 for Cormorant Garamond in PDF)
-  const sizeBump = font === 'Cormorant Garamond' ? 2 : 0;
+  const sizeBump = 0;
   const baseTitleSize = 18 + sizeBump;
   const baseHeadingSize = 14 + sizeBump;
   const baseTextSize = 12 + sizeBump;
@@ -34,7 +33,7 @@ export const usePDFStyles = (
       paddingHorizontal: 30,
       fontFamily,
       fontSize: textSize,
-      lineHeight: 1.4,
+      lineHeight: 1.2,
     },
     section: {
       marginBottom: 1,
@@ -44,23 +43,23 @@ export const usePDFStyles = (
       fontSize: headingSize,
       fontWeight: 700,
       color,
-      marginBottom: 4,
+      marginBottom: 2,
     },
     text: {
       fontSize: textSize,
-      lineHeight: 1.4,
+      lineHeight: 1.2,
     },
     title: {
       fontSize: titleSize,
       fontWeight: 700,
       textAlign: 'center',
-      marginBottom: 4,
+      marginBottom: 2,
       color,
     },
     subtitle: {
       fontSize: textSize,
       textAlign: 'center',
-      marginBottom: 4,
+      marginBottom: 2,
     },
     link: {
       color,
@@ -70,31 +69,31 @@ export const usePDFStyles = (
     horizontalRule: {
       borderBottom: `1px solid ${color}`,
       marginTop: 0,
-      marginBottom: 4,
+      marginBottom: 2,
     },
     itemTitle: {
       fontSize: textSize,
       fontWeight: 500,
-      marginBottom: 2,
+      marginBottom: 1,
     },
     itemSubtitle: {
       fontSize: textSize,
       fontStyle: 'italic',
-      marginBottom: 2,
+      marginBottom: 1,
     },
     itemDate: {
       fontSize: textSize,
       color: '#666',
-      marginBottom: 2,
+      marginBottom: 1,
     },
     itemDescription: {
       fontSize: textSize,
-      marginBottom: 1,
+      marginBottom: 0.5,
       paddingLeft: 20,
     },
     bulletPoint: {
       fontSize: textSize,
-      marginBottom: 2,
+      marginBottom: 1,
     },
     skillTitle: {
       fontSize: textSize,
@@ -106,7 +105,7 @@ export const usePDFStyles = (
     },
     row: {
       flexDirection: 'row',
-      marginBottom: 2,
+      marginBottom: 1,
     },
     column: {
       flexDirection: 'column',
