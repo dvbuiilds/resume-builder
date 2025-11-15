@@ -1,6 +1,6 @@
 # Resume Builder
 
-AI-assisted resume creation and management platform built with Next.js. Users can upload a PDF (resume or LinkedIn export), transform it into structured resume data with Groq, edit the content in an intuitive side-panel UI, and manage up to four saved versions per account.
+AI-assisted resume creation and management platform built with Next.js. Create professional resumes by uploading PDFs, transforming them with AI, and customizing every aspect with an intuitive interface.
 
 ## Overview
 
@@ -9,15 +9,60 @@ AI-assisted resume creation and management platform built with Next.js. Users ca
 - **Persistence**: SQLite for users/resume history/usage limits + dual localStorage/sessionStorage sync for in-progress editing
 - **Deployment Target**: Vercel
 
-## Key Features
+## Features
 
-- **PDF Parsing** – Extract text client-side (`react-pdftotext`) and transform it server-side via Groq.
-- **Authenticated Editing** – Access to the builder and Groq usage is restricted to signed-in users (Credentials + Google OAuth).
-- **Side Panel UX** – Collapsible edit/history tabs with matching styling and responsive behavior.
-- **Resume Versioning** – Save and restore up to four resume snapshots per user; hydrated straight into the Zustand store.
-- **Usage Limits** – Groq transform endpoint enforces four total conversions per user.
-- **Auto-Persisted State** – Resume data syncs to both localStorage and sessionStorage, preventing data loss on refresh.
-- **Theme Controls** – Switch resume fonts/colors dynamically via a dedicated theme control UI.
+### 📄 Upload PDF Resume
+
+Upload your existing resume or LinkedIn profile PDF. Our AI-powered resume generator extracts and structures your content instantly, transforming it into an editable format ready for customization.
+
+### 🎨 Drag & Drop Sections
+
+Easily reorder and customize your resume sections with intuitive drag and drop functionality. Create the perfect CV builder layout that highlights your strengths by arranging sections exactly how you want them.
+
+### ✨ AI Resume Suggestions
+
+Get intelligent suggestions for your resume descriptions powered by AI. Enhance your professional resume with optimized content that stands out to recruiters and ATS systems.
+
+### 🤖 Improvised AI Suggestions for Descriptions
+
+Get improvised AI suggestions specifically tailored for resume descriptions. The AI analyzes your existing content and provides creative, professional alternatives that improve clarity, impact, and keyword optimization. Perfect for refining work experience, project descriptions, and achievement statements to make them more compelling.
+
+### 📚 Resume Version Control
+
+Maintain a complete history of your resume management with version control. Save and access up to four different resume versions for different job applications, keeping all your variations organized.
+
+### 📝 Comprehensive Resume Sections
+
+Build complete resumes with all essential sections:
+
+- **Title** - Your name and professional identity
+- **Social Handles** - Email, LinkedIn, and other professional links
+- **Work Experience** - Detailed employment history with descriptions
+- **Projects** - Showcase your portfolio and project work
+- **Education** - Academic qualifications and achievements
+- **Skills** - Technical and soft skills
+- **Activities** - Extracurricular activities and involvement
+- **Achievements** - Awards, certifications, and recognitions
+
+### 🎨 Theme Customization
+
+Personalize your resume with custom themes:
+
+- **Colors**: Choose from Black or Dark Blue color schemes (Disabled currently)
+- **Fonts**: Select from Cormorant Garamond, Times New Roman, or Inter fonts
+- **Real-time Preview**: See your changes instantly as you customize
+
+### 📥 PDF Export
+
+Download your completed resume as a professional PDF file. The export includes adaptive font sizing and proper formatting to ensure your resume looks perfect on any device or when printed.
+
+### 💾 Auto-Save & Persistence
+
+Never lose your work. Resume data automatically syncs to both localStorage and sessionStorage, preventing data loss on page refresh. All changes are saved automatically as you edit.
+
+### 👤 User Authentication
+
+Secure access with NextAuth supporting both Credentials and Google OAuth authentication. Your resume data is safely stored and accessible across sessions.
 
 ## Low-Level Design (LLD)
 
@@ -52,14 +97,16 @@ src/
     └── withTimeout.ts                       # Promise timeout helper (Groq integration)
 ```
 
-### Data Flow
+### User Workflow
 
-1. **Upload** – `Home.tsx` reads PDF → text, keeps pending uploads in sessionStorage for post-login continuity.
-2. **Transform** – Authenticated POST to `/api/transform-pdf-string`; endpoint checks user-specific usage limit, calls Groq, sanitizes output, increments usage.
-3. **Hydrate** – Resume data hydrates Zustand via `hydrateResume` and generates a new `resumeId`.
-4. **Edit** – Editing occurs in the side-panel, reflecting in the preview in real time.
-5. **Save** – `EditPanel` Save posts to `/api/past-resumes`; server persists to SQLite (up to 4 per user) and returns refreshed history.
-6. **Restore** – History tab hydrates selection into the store, syncing with local/session storage.
+1. **Upload** – Users upload a PDF resume or LinkedIn profile export on the home page.
+2. **Transform** – The PDF is extracted client-side and sent to the AI transformation service to convert it into structured resume data.
+3. **Edit** – Users can edit all resume sections in the intuitive side panel with real-time preview.
+4. **Customize** – Apply custom themes, fonts, and colors to match personal preferences.
+5. **Organize** – Drag and drop sections to reorder them for optimal presentation.
+6. **Enhance** – Use AI suggestions to improve resume descriptions and content.
+7. **Save** – Resume versions are automatically saved, with up to 4 versions stored per user.
+8. **Export** – Download the final resume as a professional PDF file.
 
 ### State Management
 
@@ -73,30 +120,6 @@ src/
 - `users` – NextAuth credential storage
 - `user_resumes` – Historical resume entries (`resumeId`, serialized data, timestamps, limited to four newest)
 - `user_usage` – Tracks per-user Groq transform counts (max 4)
-
-## API Surface
-
-| Endpoint                    | Method   | Auth | Description                                                  |
-| --------------------------- | -------- | ---- | ------------------------------------------------------------ |
-| `/api/auth/[...nextauth]`   | GET/POST | –    | NextAuth routes (credentials + Google)                       |
-| `/api/past-resumes`         | GET      | ✅   | Retrieve latest resume history (max 4) for the current user  |
-| `/api/past-resumes`         | POST     | ✅   | Save/overwrite resume history entry                          |
-| `/api/transform-pdf-string` | POST     | ✅   | Transform raw resume text using Groq (limited to 4 per user) |
-
-### `/api/transform-pdf-string` Payload
-
-```json
-{
-  "input": "Plain text extracted from PDF"
-}
-```
-
-Responses:
-
-- `200` – `{ "data": ResumeOutput }` (sanitized structured resume)
-- `401` – Not signed in
-- `429` – Usage limit reached (4 transformations)
-- `4xx/5xx` – Error message in `{ "error": string }`
 
 ## Getting Started
 
@@ -154,10 +177,11 @@ yarn build
 
 ## Usage Guidelines
 
-- **Resume Limit**: Each saved resume history is capped at 4 per user. Oldest entries are pruned automatically.
-- **Transformation Limit**: Groq usage is capped at 4 transforms per user. Extend by adjusting `MAX_TRANSFORM_USAGE` in `db.ts` and usage messages.
-- **Auth Required**: Resume builder route and APIs rely on NextAuth middleware; unauthenticated users are redirected to `/auth`.
-- **Storage Sync**: Clearing browser storage purges local drafts but server-stored histories remain accessible via the history tab.
+- **Resume Versions**: You can save up to 4 resume versions per account. Older versions are automatically pruned when you exceed this limit.
+- **PDF Transformations**: AI-powered PDF transformations are limited to 4 per user account to manage resource usage.
+- **Authentication Required**: You must be signed in to access the resume builder and save your work.
+- **Data Persistence**: Your resume data is saved both locally (in your browser) and on the server, ensuring you can access it from any device.
+- **Real-time Editing**: All changes are reflected immediately in the preview panel as you edit.
 
 ## Development Notes
 
