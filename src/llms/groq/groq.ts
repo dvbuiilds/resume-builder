@@ -31,7 +31,6 @@ export const getNewChatCompletionWithGroq = async (data: string) => {
   });
 
   const content = chatCompletion.choices?.[0]?.message?.content ?? '';
-  console.log('@@ Dhairya chatCompletion Result: ', JSON.stringify(content));
   return content;
 };
 

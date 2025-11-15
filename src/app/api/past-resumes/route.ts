@@ -26,15 +26,30 @@ export const GET = async (request: NextRequest) => {
   const token = await getToken({ req: request });
 
   const userId = token?.id as string | undefined;
+  console.log('[GET /api/past-resumes] Token received:', {
+    hasToken: !!token,
+    userId: userId,
+    tokenId: token?.id,
+  });
+
   if (!userId) {
+    console.error('[GET /api/past-resumes] No userId found in token');
     return asErrorResponse('Unauthorized', 401);
   }
 
   try {
     const rows = dbOperations.getUserResumes(userId);
+    console.log('[GET /api/past-resumes] Retrieved resumes:', {
+      userId,
+      resumeCount: rows.length,
+    });
     return NextResponse.json({ data: serializeResumes(rows) }, { status: 200 });
   } catch (err) {
-    console.error('Failed to load past resumes', err);
+    console.error('[GET /api/past-resumes] Failed to load past resumes:', {
+      userId,
+      error: err,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
     return asErrorResponse('Failed to load resumes', 500);
   }
 };
@@ -43,9 +58,25 @@ export const POST = async (request: NextRequest) => {
   const token = await getToken({ req: request });
   const userId = token?.id as string | undefined;
 
+  console.log('[POST /api/past-resumes] Token received:', {
+    hasToken: !!token,
+    userId: userId,
+    tokenId: token?.id,
+    tokenEmail: token?.email,
+  });
+
   if (!userId) {
+    console.error('[POST /api/past-resumes] No userId found in token');
     return asErrorResponse('Unauthorized', 401);
   }
+
+  // Check if user exists in database
+  const user = dbOperations.findUserById(userId);
+  console.log('[POST /api/past-resumes] User lookup:', {
+    userId,
+    userExists: !!user,
+    userEmail: user?.email,
+  });
 
   try {
     const payload = await request.json();
@@ -67,16 +98,33 @@ export const POST = async (request: NextRequest) => {
       return asErrorResponse('Invalid payload', 400);
     }
 
+    console.log('[POST /api/past-resumes] Attempting to upsert resume:', {
+      userId,
+      resumeId,
+      hasRowId: !!rowId,
+      dataLength: data.length,
+    });
+
     dbOperations.upsertUserResume(userId, {
       resumeRowId: rowId,
       resumeId,
       data,
     });
 
+    console.log('[POST /api/past-resumes] Resume upserted successfully:', {
+      userId,
+      resumeId,
+    });
+
     const rows = dbOperations.getUserResumes(userId);
     return NextResponse.json({ data: serializeResumes(rows) }, { status: 200 });
   } catch (err) {
-    console.error('Failed to save past resume', err);
+    console.error('[POST /api/past-resumes] Failed to save past resume:', {
+      userId,
+      error: err,
+      errorMessage: err instanceof Error ? err.message : String(err),
+      errorStack: err instanceof Error ? err.stack : undefined,
+    });
     if (err instanceof Response) {
       const message = await parseErrorMessage(err);
       return asErrorResponse(message, err.status || 500);

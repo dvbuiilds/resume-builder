@@ -168,6 +168,30 @@ export const dbOperations = {
   ): void => {
     const now = Date.now();
 
+    console.log('[dbOperations.upsertUserResume] Starting upsert:', {
+      userId,
+      resumeId: options.resumeId,
+      hasRowId: !!options.resumeRowId,
+    });
+
+    // Verify user exists before attempting upsert
+    const userCheck = dbOperations.findUserById(userId);
+    console.log('[dbOperations.upsertUserResume] User verification:', {
+      userId,
+      userExists: !!userCheck,
+      userEmail: userCheck?.email,
+    });
+
+    if (!userCheck) {
+      console.error(
+        '[dbOperations.upsertUserResume] User not found in database:',
+        {
+          userId,
+        },
+      );
+      throw new Error(`User with id ${userId} not found in database`);
+    }
+
     const existingStmt = db.prepare(
       'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
     );
@@ -175,18 +199,57 @@ export const dbOperations = {
       | { id: string }
       | undefined;
 
+    console.log('[dbOperations.upsertUserResume] Existing resume check:', {
+      userId,
+      resumeId: options.resumeId,
+      exists: !!existing,
+      existingId: existing?.id,
+    });
+
     const upsert = db.transaction(() => {
       if (existing) {
+        console.log(
+          '[dbOperations.upsertUserResume] Updating existing resume:',
+          {
+            userId,
+            resumeId: options.resumeId,
+            rowId: existing.id,
+          },
+        );
         const updateStmt = db.prepare(
           'UPDATE user_resumes SET data = ?, updatedAt = ?, deletedAt = NULL WHERE id = ?',
         );
         updateStmt.run(options.data, now, existing.id);
       } else {
+        const rowId = options.resumeRowId ?? crypto.randomUUID();
+        console.log('[dbOperations.upsertUserResume] Inserting new resume:', {
+          userId,
+          resumeId: options.resumeId,
+          rowId,
+        });
         const insertStmt = db.prepare(
           'INSERT INTO user_resumes (id, userId, resumeId, data, updatedAt, deletedAt) VALUES (?, ?, ?, ?, ?, NULL)',
         );
-        const rowId = options.resumeRowId ?? crypto.randomUUID();
-        insertStmt.run(rowId, userId, options.resumeId, options.data, now);
+        try {
+          insertStmt.run(rowId, userId, options.resumeId, options.data, now);
+          console.log('[dbOperations.upsertUserResume] Insert successful:', {
+            userId,
+            resumeId: options.resumeId,
+            rowId,
+          });
+        } catch (insertError) {
+          console.error('[dbOperations.upsertUserResume] Insert failed:', {
+            userId,
+            resumeId: options.resumeId,
+            rowId,
+            error: insertError,
+            errorMessage:
+              insertError instanceof Error
+                ? insertError.message
+                : String(insertError),
+          });
+          throw insertError;
+        }
       }
 
       const rows = db
@@ -208,7 +271,28 @@ export const dbOperations = {
       }
     });
 
-    upsert();
+    try {
+      upsert();
+      console.log(
+        '[dbOperations.upsertUserResume] Upsert completed successfully:',
+        {
+          userId,
+          resumeId: options.resumeId,
+        },
+      );
+    } catch (error) {
+      console.error(
+        '[dbOperations.upsertUserResume] Upsert transaction failed:',
+        {
+          userId,
+          resumeId: options.resumeId,
+          error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+        },
+      );
+      throw error;
+    }
   },
 
   getTransformUsage: (userId: string): number => {
@@ -220,13 +304,55 @@ export const dbOperations = {
   },
 
   incrementTransformUsage: (userId: string) => {
-    const upsert = db.prepare(`
-      INSERT INTO user_usage (userId, transformUsage)
-      VALUES (?, 1)
-      ON CONFLICT(userId)
-      DO UPDATE SET transformUsage = transformUsage + 1
-    `);
-    upsert.run(userId);
+    console.log('[dbOperations.incrementTransformUsage] Starting:', {
+      userId,
+    });
+
+    // Verify user exists before attempting to increment usage
+    const userCheck = dbOperations.findUserById(userId);
+    console.log('[dbOperations.incrementTransformUsage] User verification:', {
+      userId,
+      userExists: !!userCheck,
+      userEmail: userCheck?.email,
+    });
+
+    if (!userCheck) {
+      console.error(
+        '[dbOperations.incrementTransformUsage] User not found in database:',
+        {
+          userId,
+        },
+      );
+      throw new Error(`User with id ${userId} not found in database`);
+    }
+
+    try {
+      const upsert = db.prepare(`
+        INSERT INTO user_usage (userId, transformUsage)
+        VALUES (?, 1)
+        ON CONFLICT(userId)
+        DO UPDATE SET transformUsage = transformUsage + 1
+      `);
+      upsert.run(userId);
+      console.log(
+        '[dbOperations.incrementTransformUsage] Usage incremented successfully:',
+        {
+          userId,
+          newUsage: dbOperations.getTransformUsage(userId),
+        },
+      );
+    } catch (error) {
+      console.error(
+        '[dbOperations.incrementTransformUsage] Failed to increment usage:',
+        {
+          userId,
+          error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+        },
+      );
+      throw error;
+    }
   },
 
   maxTransformUsage: MAX_TRANSFORM_USAGE,
