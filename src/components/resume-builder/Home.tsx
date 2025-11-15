@@ -11,6 +11,8 @@ import React, {
 import pdfToText from 'react-pdftotext';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { FaUpload, FaGripVertical, FaHistory, FaGithub } from 'react-icons/fa';
+import { HiSparkles } from 'react-icons/hi2';
 
 import { useResumeStore } from '@resume-builder/components/resume-builder/store/resumeStore';
 import { useUserResumeStore } from '@resume-builder/components/resume-builder/store/userResumeStore';
@@ -299,68 +301,146 @@ const Home: React.FC = () => {
   const showContinueButton = isAuthenticated && resumeCount > 0;
 
   return (
-    <div className="max-w-xl mx-auto p-8">
-      <h1 className="text-center text-4xl font-bold mb-2">Resume Builder</h1>
-      <p className="text-center text-gray-600 mb-10">
-        Build a standout resume in minutes by uploading your latest CV PDF or
-        your LinkedIn profile.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-10 justify-center mb-10">
-        <div className="flex-1 min-w-[300px] md:min-w-[340px] max-w-lg bg-gray-100 rounded-lg p-6 shadow-sm">
-          <h2 className="text-lg mb-4">
-            Upload your Resume or LinkedIn Profile PDF:
-          </h2>
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={handleFileChange}
-            className="block text-sm text-gray-800 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer file:mr-4"
-          />
-          <p className="mt-3 text-xs text-gray-500">
-            Supported formats: Resume PDF, LinkedIn profile PDF export, or any
-            CV PDF.
-          </p>
-          {selectedFile ? (
-            <p className="mt-2 text-xs text-gray-600">
-              Selected file:{' '}
-              <span className="font-medium">{selectedFile.name}</span>
+    <>
+      <div className="max-w-xl mx-auto p-8">
+        <h1 className="text-center text-4xl font-bold mb-2">Resume Builder</h1>
+        <p className="text-center text-gray-600 mb-10">
+          Build a standout resume in minutes by uploading your latest CV PDF or
+          your LinkedIn profile.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-10 justify-center mb-10">
+          <div className="flex-1 min-w-[300px] md:min-w-[340px] max-w-lg bg-gray-100 rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg mb-4">
+              Upload your Resume or LinkedIn Profile PDF:
+            </h2>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={handleFileChange}
+              className="block text-sm text-gray-800 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer file:mr-4"
+            />
+            <p className="mt-3 text-xs text-gray-500">
+              Supported formats: Resume PDF, LinkedIn profile PDF export, or any
+              CV PDF.
             </p>
+            {selectedFile ? (
+              <p className="mt-2 text-xs text-gray-600">
+                Selected file:{' '}
+                <span className="font-medium">{selectedFile.name}</span>
+              </p>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+          <button
+            onClick={handleCreateResume}
+            className="flex-1 py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-blue-700 transition disabled:opacity-60 flex justify-center items-center gap-3"
+            disabled={isButtonDisabled}
+          >
+            {isCreating ? (
+              <span className="inline-flex items-center gap-3">
+                <span className="animate-spin w-6 h-6 border-4 border-white border-t-blue-600 rounded-full inline-block" />
+                Creating Resume...
+              </span>
+            ) : (
+              'Create New Resume'
+            )}
+          </button>
+          {showContinueButton ? (
+            <button
+              onClick={handleContinueExisting}
+              className="flex-1 py-4 bg-gray-200 text-gray-800 text-lg font-semibold rounded-lg shadow-md hover:bg-gray-300 transition"
+            >
+              Continue Existing
+            </button>
           ) : null}
         </div>
-      </div>
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-        <button
-          onClick={handleCreateResume}
-          className="flex-1 py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md hover:bg-blue-700 transition disabled:opacity-60 flex justify-center items-center gap-3"
-          disabled={isButtonDisabled}
-        >
-          {isCreating ? (
-            <span className="inline-flex items-center gap-3">
-              <span className="animate-spin w-6 h-6 border-4 border-white border-t-blue-600 rounded-full inline-block" />
-              Creating Resume...
-            </span>
-          ) : (
-            'Create New Resume'
-          )}
-        </button>
-        {showContinueButton ? (
-          <button
-            onClick={handleContinueExisting}
-            className="flex-1 py-4 bg-gray-200 text-gray-800 text-lg font-semibold rounded-lg shadow-md hover:bg-gray-300 transition"
+        {error ? (
+          <div
+            role="alert"
+            className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
           >
-            Continue Existing
-          </button>
+            {error}
+          </div>
         ) : null}
       </div>
-      {error ? (
-        <div
-          role="alert"
-          className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-        >
-          {error}
+
+      {/* Features Section */}
+      <div className="max-w-6xl mx-auto mt-20 mb-16 px-8">
+        <h2 className="text-3xl font-bold text-center mb-12">
+          Why Choose Our Resume Builder
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Feature 1: Upload Resume/LinkedIn PDF */}
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-4 text-blue-600">
+              <FaUpload size={48} />
+            </div>
+            <h3 className="font-bold text-lg mb-3">Upload PDF Resume</h3>
+            <p className="text-gray-600 text-sm text-justify">
+              Transform your existing resume or LinkedIn profile PDF into a
+              professional resume builder format. Our AI-powered resume
+              generator extracts and structures your content instantly.
+            </p>
+          </div>
+
+          {/* Feature 2: Drag and Drop Sections */}
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-4 text-blue-600">
+              <FaGripVertical size={48} />
+            </div>
+            <h3 className="font-bold text-lg mb-3">Drag & Drop Sections</h3>
+            <p className="text-gray-600 text-sm text-justify">
+              Easily reorder and customize your resume sections with intuitive
+              drag and drop functionality. Create the perfect CV builder layout
+              that highlights your strengths.
+            </p>
+          </div>
+
+          {/* Feature 3: AI Suggestions */}
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-4 text-blue-600">
+              <HiSparkles size={48} />
+            </div>
+            <h3 className="font-bold text-lg mb-3">AI Resume Suggestions</h3>
+            <p className="text-gray-600 text-sm text-justify">
+              Get intelligent suggestions for your resume descriptions powered
+              by AI. Enhance your professional resume with optimized content
+              that stands out to recruiters.
+            </p>
+          </div>
+
+          {/* Feature 4: History of Resumes */}
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-4 text-blue-600">
+              <FaHistory size={48} />
+            </div>
+            <h3 className="font-bold text-lg mb-3">Resume Version Control</h3>
+            <p className="text-gray-600 text-sm text-justify">
+              Maintain a complete history of your resume management with version
+              control. Save and access up to four different resume versions for
+              different job applications.
+            </p>
+          </div>
         </div>
-      ) : null}
-    </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="max-w-xl mx-auto px-8 py-6 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-gray-600">
+          <span>Made with ❤️ by Dhairya Varshney</span>
+          <a
+            href="https://github.com/dvbuiilds/resume-builder"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 hover:text-gray-900 transition-colors"
+            aria-label="GitHub Repository"
+          >
+            <FaGithub size={20} />
+          </a>
+        </div>
+      </footer>
+    </>
   );
 };
 
