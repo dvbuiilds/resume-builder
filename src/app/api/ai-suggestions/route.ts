@@ -21,6 +21,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Check if user exists in database
+  const user = dbOperations.findUserById(userId);
+  if (!user) {
+    console.error('[POST /api/ai-suggestions] User not found in database:', {
+      userId,
+      email: token?.email,
+    });
+    return NextResponse.json(
+      { error: 'Your session has expired. Please sign in again.' },
+      { status: 401 },
+    );
+  }
+
   // Check usage limit (resets after 24h)
   const currentUsage = dbOperations.getAISuggestionUsage(userId);
   if (currentUsage >= dbOperations.maxAISuggestionUsage) {
@@ -103,6 +116,19 @@ export async function GET(req: NextRequest) {
   if (!userId) {
     return NextResponse.json(
       { error: 'You must be signed in.' },
+      { status: 401 },
+    );
+  }
+
+  // Check if user exists in database
+  const user = dbOperations.findUserById(userId);
+  if (!user) {
+    console.error('[GET /api/ai-suggestions] User not found in database:', {
+      userId,
+      email: token?.email,
+    });
+    return NextResponse.json(
+      { error: 'Your session has expired. Please sign in again.' },
       { status: 401 },
     );
   }

@@ -235,11 +235,7 @@ const Home: React.FC = () => {
       router.push('/resume-builder');
     } catch (err) {
       console.error('Failed to create resume:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Something went wrong while creating your resume.',
-      );
+      setError('Something went wrong while creating your resume.');
     } finally {
       setIsCreating(false);
     }

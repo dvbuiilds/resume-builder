@@ -221,18 +221,27 @@ const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token.id) {
         const dbUser = dbOperations.findUserById(token.id as string);
-        if (dbUser) {
-          session.user.id = dbUser.id;
-          session.user.email = dbUser.email;
-          session.user.name = dbUser.name || undefined;
-          session.user.image = dbUser.image || undefined;
-        } else {
-          // Fallback to token data if user not found in DB
-          session.user.id = token.id as string;
-          session.user.email = token.email as string;
-          session.user.name = token.name as string;
-          session.user.image = token.picture as string;
+
+        // If user doesn't exist in database, invalidate the session
+        // This handles cases where the database was reset (e.g., on Vercel)
+        if (!dbUser) {
+          console.log(
+            '[NextAuth Session] User not found in database, invalidating session:',
+            {
+              userId: token.id,
+              email: token.email,
+            },
+          );
+          // Return null to invalidate the session
+          // Type assertion needed because NextAuth types don't officially support null
+          return null as any;
         }
+
+        // User exists, populate session with database data
+        session.user.id = dbUser.id;
+        session.user.email = dbUser.email;
+        session.user.name = dbUser.name || undefined;
+        session.user.image = dbUser.image || undefined;
       }
       return session;
     },

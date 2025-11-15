@@ -12,7 +12,7 @@ const GROQ_TIMEOUT_MS = 120_000;
 
 export async function POST(req: NextRequest) {
   const token = await getToken({ req });
-  const userId = token?.id as string | undefined;
+  let userId = token?.id as string | undefined;
 
   console.log('[POST /api/transform-pdf-string] Token received:', {
     hasToken: !!token,
@@ -36,6 +36,22 @@ export async function POST(req: NextRequest) {
     userExists: !!user,
     userEmail: user?.email,
   });
+
+  // If user doesn't exist in database, return 401 to invalidate session
+  // This handles cases where the database was reset (e.g., on Vercel)
+  if (!user) {
+    console.error(
+      '[POST /api/transform-pdf-string] User not found in database:',
+      {
+        userId,
+        email: token?.email,
+      },
+    );
+    return NextResponse.json(
+      { error: 'Your session has expired. Please sign in again.' },
+      { status: 401 },
+    );
+  }
 
   const currentUsage = dbOperations.getTransformUsage(userId);
   console.log('[POST /api/transform-pdf-string] Transform usage:', {
