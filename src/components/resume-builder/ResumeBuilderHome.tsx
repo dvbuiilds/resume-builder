@@ -5,6 +5,7 @@ import { MdOutlineEditNote, MdOutlineHistory } from 'react-icons/md';
 // PROVIDERS
 import { LayoutProvider, useLayout } from './context/LayoutContext';
 import { HistoryProvider } from './context/HistoryContext';
+import { AISuggestionUsageProvider } from './context/AISuggestionUsageContext';
 
 // COMPONENTS
 import { ResumeThemeProvider } from './context/ResumeThemeContext';
@@ -19,7 +20,9 @@ export const ResumeBuilderHome = () => {
     <ResumeThemeProvider>
       <LayoutProvider>
         <HistoryProvider>
-          <ResumeBuilder />
+          <AISuggestionUsageProvider>
+            <ResumeBuilder />
+          </AISuggestionUsageProvider>
         </HistoryProvider>
       </LayoutProvider>
     </ResumeThemeProvider>

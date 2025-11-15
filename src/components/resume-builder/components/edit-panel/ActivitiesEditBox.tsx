@@ -11,6 +11,7 @@ import {
   ButtonWithPlusIcon,
   InputField,
 } from './EditPanelComponents';
+import { InputFieldV2 } from './InputFieldV2';
 
 export const ActivitiesEditBox: React.FC = () => {
   const activities = useResumeStore((s) => s.activities);
@@ -167,7 +168,7 @@ const ActivityEditBox: React.FC<ActivityEditBoxProps> = ({
 
       {data.descriptions.map((desc, descIndex) => (
         <div key={descIndex} className="flex items-center gap-2">
-          <InputField
+          <InputFieldV2
             type="text"
             value={desc}
             onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
@@ -175,6 +176,13 @@ const ActivityEditBox: React.FC<ActivityEditBoxProps> = ({
             }
             placeholder={`Description #${descIndex + 1}`}
             isDescriptionField
+            contextData={{
+              jobRole: data.activityTitle,
+              companyName: data.institutionName,
+            }}
+            onApplySuggestion={(suggestion) =>
+              handleDescriptionChange(index, descIndex, suggestion)
+            }
           />
           <ButtonWithCrossIcon
             onClick={() => deleteDescription(index, descIndex)}

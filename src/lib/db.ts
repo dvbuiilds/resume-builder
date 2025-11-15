@@ -5,6 +5,8 @@ import { existsSync, mkdirSync } from 'fs';
 
 const MAX_RESUMES_PER_USER = 4;
 const MAX_TRANSFORM_USAGE = 4;
+const MAX_AI_SUGGESTION_USAGE = 10;
+const AI_SUGGESTION_RESET_HOURS = 24;
 
 // Get database path from environment or use default
 const dbPath =
@@ -42,6 +44,7 @@ db.exec(`
     resumeId TEXT NOT NULL,
     data TEXT NOT NULL,
     updatedAt INTEGER NOT NULL,
+    deletedAt INTEGER,
     FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE(userId, resumeId)
   );
@@ -54,6 +57,47 @@ db.exec(`
     FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
   );
 `);
+
+// Migration: Add deletedAt column if it doesn't exist
+// SQLite doesn't support IF NOT EXISTS for columns, so we handle it manually
+try {
+  const tableInfo = db
+    .prepare('PRAGMA table_info(user_resumes)')
+    .all() as Array<{ name: string }>;
+
+  const hasDeletedAt = tableInfo.some((col) => col.name === 'deletedAt');
+  if (!hasDeletedAt) {
+    db.exec('ALTER TABLE user_resumes ADD COLUMN deletedAt INTEGER');
+  }
+} catch (err) {
+  // Table might not exist yet, which is fine - it will be created with deletedAt
+  console.warn('Migration check for deletedAt column failed:', err);
+}
+
+// Migration: Add AI suggestion usage columns if they don't exist
+try {
+  const usageTableInfo = db
+    .prepare('PRAGMA table_info(user_usage)')
+    .all() as Array<{ name: string }>;
+
+  const hasAISuggestionUsage = usageTableInfo.some(
+    (col) => col.name === 'aiSuggestionUsage',
+  );
+  if (!hasAISuggestionUsage) {
+    db.exec(
+      'ALTER TABLE user_usage ADD COLUMN aiSuggestionUsage INTEGER NOT NULL DEFAULT 0',
+    );
+  }
+
+  const hasAISuggestionLastReset = usageTableInfo.some(
+    (col) => col.name === 'aiSuggestionLastReset',
+  );
+  if (!hasAISuggestionLastReset) {
+    db.exec('ALTER TABLE user_usage ADD COLUMN aiSuggestionLastReset INTEGER');
+  }
+} catch (err) {
+  console.warn('Migration check for AI suggestion columns failed:', err);
+}
 
 export interface User {
   id: string;
@@ -108,7 +152,7 @@ export const dbOperations = {
     updatedAt: number;
   }> => {
     const stmt = db.prepare(
-      'SELECT id, resumeId, data, updatedAt FROM user_resumes WHERE userId = ? ORDER BY updatedAt DESC LIMIT ?',
+      'SELECT id, resumeId, data, updatedAt FROM user_resumes WHERE userId = ? AND (deletedAt IS NULL OR deletedAt = 0) ORDER BY updatedAt DESC LIMIT ?',
     );
     return stmt.all(userId, MAX_RESUMES_PER_USER) as Array<{
       id: string;
@@ -134,12 +178,12 @@ export const dbOperations = {
     const upsert = db.transaction(() => {
       if (existing) {
         const updateStmt = db.prepare(
-          'UPDATE user_resumes SET data = ?, updatedAt = ? WHERE id = ?',
+          'UPDATE user_resumes SET data = ?, updatedAt = ?, deletedAt = NULL WHERE id = ?',
         );
         updateStmt.run(options.data, now, existing.id);
       } else {
         const insertStmt = db.prepare(
-          'INSERT INTO user_resumes (id, userId, resumeId, data, updatedAt) VALUES (?, ?, ?, ?, ?)',
+          'INSERT INTO user_resumes (id, userId, resumeId, data, updatedAt, deletedAt) VALUES (?, ?, ?, ?, ?, NULL)',
         );
         const rowId = options.resumeRowId ?? crypto.randomUUID();
         insertStmt.run(rowId, userId, options.resumeId, options.data, now);
@@ -147,7 +191,7 @@ export const dbOperations = {
 
       const rows = db
         .prepare(
-          'SELECT id FROM user_resumes WHERE userId = ? ORDER BY updatedAt DESC',
+          'SELECT id FROM user_resumes WHERE userId = ? AND (deletedAt IS NULL OR deletedAt = 0) ORDER BY updatedAt DESC',
         )
         .all(userId) as Array<{ id: string }>;
 
@@ -156,11 +200,11 @@ export const dbOperations = {
           .slice(MAX_RESUMES_PER_USER)
           .map((row) => row.id);
         const deleteStmt = db.prepare(
-          `DELETE FROM user_resumes WHERE id IN (${idsToDelete
+          `UPDATE user_resumes SET deletedAt = ? WHERE id IN (${idsToDelete
             .map(() => '?')
             .join(',')})`,
         );
-        deleteStmt.run(...idsToDelete);
+        deleteStmt.run(now, ...idsToDelete);
       }
     });
 
@@ -186,6 +230,92 @@ export const dbOperations = {
   },
 
   maxTransformUsage: MAX_TRANSFORM_USAGE,
+
+  getAISuggestionUsage: (userId: string): number => {
+    // Check if 24 hours have passed since last reset
+    const stmt = db.prepare(
+      'SELECT aiSuggestionUsage, aiSuggestionLastReset FROM user_usage WHERE userId = ?',
+    );
+    const row = stmt.get(userId) as
+      | { aiSuggestionUsage: number; aiSuggestionLastReset: number | null }
+      | undefined;
+
+    if (!row) {
+      return 0;
+    }
+
+    const now = Date.now();
+    const lastReset = row.aiSuggestionLastReset ?? 0;
+    const hoursSinceReset = (now - lastReset) / (1000 * 60 * 60);
+
+    // Reset if 24 hours have passed
+    if (hoursSinceReset >= AI_SUGGESTION_RESET_HOURS) {
+      const resetStmt = db.prepare(`
+        UPDATE user_usage
+        SET aiSuggestionUsage = 0, aiSuggestionLastReset = ?
+        WHERE userId = ?
+      `);
+      resetStmt.run(now, userId);
+      return 0;
+    }
+
+    return row.aiSuggestionUsage ?? 0;
+  },
+
+  incrementAISuggestionUsage: (userId: string) => {
+    const now = Date.now();
+    const upsert = db.prepare(`
+      INSERT INTO user_usage (userId, aiSuggestionUsage, aiSuggestionLastReset)
+      VALUES (?, 1, ?)
+      ON CONFLICT(userId)
+      DO UPDATE SET 
+        aiSuggestionUsage = aiSuggestionUsage + 1,
+        aiSuggestionLastReset = CASE 
+          WHEN aiSuggestionLastReset IS NULL OR (aiSuggestionUsage + 1 = 1) THEN ?
+          ELSE aiSuggestionLastReset
+        END
+    `);
+    upsert.run(userId, now, now);
+  },
+
+  maxAISuggestionUsage: MAX_AI_SUGGESTION_USAGE,
+
+  deleteUserResume: (userId: string, resumeId: string): void => {
+    const verifyStmt = db.prepare(
+      'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
+    );
+    const existing = verifyStmt.get(userId, resumeId) as
+      | { id: string }
+      | undefined;
+
+    if (!existing) {
+      throw new Error('Resume not found');
+    }
+
+    const now = Date.now();
+    const deleteStmt = db.prepare(
+      'UPDATE user_resumes SET deletedAt = ? WHERE userId = ? AND resumeId = ?',
+    );
+    deleteStmt.run(now, userId, resumeId);
+  },
+
+  restoreUserResume: (userId: string, resumeId: string): void => {
+    const verifyStmt = db.prepare(
+      'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
+    );
+    const existing = verifyStmt.get(userId, resumeId) as
+      | { id: string }
+      | undefined;
+
+    if (!existing) {
+      throw new Error('Resume not found');
+    }
+
+    const restoreStmt = db.prepare(
+      'UPDATE user_resumes SET deletedAt = NULL WHERE userId = ? AND resumeId = ?',
+    );
+    restoreStmt.run(userId, resumeId);
+  },
 
   // Find user by email
   findUserByEmail: (email: string): User | null => {

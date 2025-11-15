@@ -15,6 +15,7 @@ import {
   ButtonWithPlusIcon,
   InputField,
 } from './EditPanelComponents';
+import { InputFieldV2 } from './InputFieldV2';
 
 export const ProjectsEditBox: React.FC = () => {
   const projects = useResumeStore((s) => s.projects);
@@ -170,7 +171,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
 
       {data.description.map((desc, descIndex) => (
         <div key={descIndex} className="flex items-center gap-2">
-          <InputField
+          <InputFieldV2
             type="text"
             value={desc}
             onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
@@ -178,6 +179,13 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
             }
             placeholder={`Description #${descIndex}`}
             isDescriptionField
+            contextData={{
+              jobRole: data.projectTitle,
+              companyName: data.organizationName,
+            }}
+            onApplySuggestion={(suggestion) =>
+              handleDescriptionChange(index, descIndex, suggestion)
+            }
           />
           <ButtonWithCrossIcon
             onClick={() => deleteDescription(index, descIndex)}

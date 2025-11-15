@@ -30,3 +30,17 @@
   font-size: 1.25rem;
   line-height: 1.5rem;
 } /* was 1.125rem */
+
+/* Slide up animation for mobile bottom sheet */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
