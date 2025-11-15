@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
 import { useResumeStore } from '@resume-builder/components/resume-builder/store/resumeStore';
+import { useUserResumeStore } from '@resume-builder/components/resume-builder/store/userResumeStore';
+import { getUserResumes } from '@resume-builder/components/resume-builder/utils/userResumeData';
 import type { ResumeOutput } from '@resume-builder/components/resume-builder/types/pdf-transform-schema';
 import fetchWithTimeout from '@resume-builder/utils/fetchWithTimeout';
 import {
@@ -90,6 +92,7 @@ const Home: React.FC = () => {
   const router = useRouter();
   const { status: authStatus } = useSession();
   const hydrateResume = useResumeStore((state) => state.hydrate);
+  const resumeCount = useUserResumeStore((state) => state.resumeCount);
 
   const [extractedText, setExtractedText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -281,12 +284,19 @@ const Home: React.FC = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
     restorePendingUpload();
+    // Ensure user resumes are loaded when authenticated
+    // Note: useUserResumeSync hook will also handle this, but this ensures it's loaded for button visibility
+    getUserResumes().catch(() => {
+      // Silently fail - useUserResumeSync hook will also handle this
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   const isButtonDisabled =
     isExtracting || isCreating || authStatus === 'loading';
 
-  const showAuthActions = isAuthenticated;
+  // Only show "Continue Existing Resume" button if user has at least one resume
+  const showContinueButton = isAuthenticated && resumeCount > 0;
 
   return (
     <div className="max-w-xl mx-auto p-8">
@@ -333,7 +343,7 @@ const Home: React.FC = () => {
             'Create New Resume'
           )}
         </button>
-        {showAuthActions ? (
+        {showContinueButton ? (
           <button
             onClick={handleContinueExisting}
             className="flex-1 py-4 bg-gray-200 text-gray-800 text-lg font-semibold rounded-lg shadow-md hover:bg-gray-300 transition"

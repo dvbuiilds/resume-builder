@@ -8,6 +8,7 @@ import {
 
 import fetchWithTimeout from '@resume-builder/utils/fetchWithTimeout';
 import { parseErrorMessage } from '@resume-builder/components/resume-builder/utils/parseErrorMessage';
+import { refreshUserResumes } from '@resume-builder/components/resume-builder/utils/userResumeData';
 import {
   hydrateResumeFromHistory,
   resetResumeToInitial,
@@ -15,6 +16,7 @@ import {
 
 import { useHistory } from '../../context/HistoryContext';
 import { useResumeStore } from '../../store/resumeStore';
+import { useUserResumeStore } from '../../store/userResumeStore';
 
 // Constants
 const API_TIMEOUT_MS = 5000;
@@ -215,8 +217,13 @@ export const HistoryPanel: React.FC = () => {
 
         const payload = (await response.json()) as { data?: unknown[] };
         if (Array.isArray(payload?.data)) {
+          // Sync store with updated resume list
+          await refreshUserResumes();
           await refresh();
         }
+
+        // Also update store immediately for better UX
+        useUserResumeStore.getState().deleteResume(resumeId);
 
         setDeletedResume({ resumeId, rowId });
 
@@ -255,6 +262,8 @@ export const HistoryPanel: React.FC = () => {
         throw new Error(message || 'Failed to restore resume');
       }
 
+      // Sync store with updated resume list
+      await refreshUserResumes();
       await refresh();
       setDeletedResume(null);
     } catch (err) {

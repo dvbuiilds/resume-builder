@@ -43,7 +43,7 @@ export const Navbar = () => {
 
   return (
     <nav className="border-b border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-4 px-4 py-3">
+      <div className="flex items-center justify-between gap-4 px-4 py-3">
         <button
           type="button"
           onClick={() => router.push('/')}

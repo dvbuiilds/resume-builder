@@ -86,7 +86,7 @@ export const ResumeBuilder: React.FC = () => {
 
   return (
     <>
-      <div className="flex flex-row w-full h-screen px-1">
+      <div className="flex flex-row w-full h-screen">
         {/* Left Column - Side Panel with Controls */}
         <aside
           className={`${panelWidthClassName} transition-all duration-300 ease-in-out flex flex-row bg-white border-r border-gray-200 shadow-sm`}
@@ -114,7 +114,7 @@ export const ResumeBuilder: React.FC = () => {
         </aside>
 
         {/* Right Column - Resume Preview */}
-        <div className="flex-1 min-h-screen overflow-auto scrollbar-hide py-2 px-4 flex items-start justify-center transition-all duration-300 bg-gray-200">
+        <div className="flex-1 min-h-screen overflow-auto scrollbar-hide py-2 flex items-start justify-center transition-all duration-300 bg-gray-200">
           <Resume />
         </div>
       </div>

@@ -33,6 +33,7 @@ import { useHistory } from '../../context/HistoryContext';
 
 // UTILS
 import fetchWithTimeout from '@resume-builder/utils/fetchWithTimeout';
+import { refreshUserResumes } from '../../utils/userResumeData';
 import { getResumeSnapshotForSave } from '../../store/resumePersistence';
 import { parseErrorMessage } from '../../utils/parseErrorMessage';
 
@@ -175,6 +176,8 @@ export const EditPanel: React.FC = () => {
 
       if (Array.isArray(payload?.data)) {
         setEntries(payload.data);
+        // Sync store with updated resume list
+        await refreshUserResumes();
       }
 
       setSaveFeedback({
