@@ -37,6 +37,27 @@ export const GET = async (request: NextRequest) => {
     return asErrorResponse('Unauthorized', 401);
   }
 
+  // Check if user exists in database
+  const user = dbOperations.findUserById(userId);
+  console.log('[GET /api/past-resumes] User lookup:', {
+    userId,
+    userExists: !!user,
+    userEmail: user?.email,
+  });
+
+  // If user doesn't exist in database, return 401 to invalidate session
+  // This handles cases where the database was reset (e.g., on Vercel)
+  if (!user) {
+    console.error('[GET /api/past-resumes] User not found in database:', {
+      userId,
+      email: token?.email,
+    });
+    return asErrorResponse(
+      'Your session has expired. Please sign in again.',
+      401,
+    );
+  }
+
   try {
     const rows = dbOperations.getUserResumes(userId);
     console.log('[GET /api/past-resumes] Retrieved resumes:', {
@@ -77,6 +98,19 @@ export const POST = async (request: NextRequest) => {
     userExists: !!user,
     userEmail: user?.email,
   });
+
+  // If user doesn't exist in database, return 401 to invalidate session
+  // This handles cases where the database was reset (e.g., on Vercel)
+  if (!user) {
+    console.error('[POST /api/past-resumes] User not found in database:', {
+      userId,
+      email: token?.email,
+    });
+    return asErrorResponse(
+      'Your session has expired. Please sign in again.',
+      401,
+    );
+  }
 
   try {
     const payload = await request.json();
@@ -141,6 +175,19 @@ export const DELETE = async (request: NextRequest) => {
     return asErrorResponse('Unauthorized', 401);
   }
 
+  // Check if user exists in database
+  const user = dbOperations.findUserById(userId);
+  if (!user) {
+    console.error('[DELETE /api/past-resumes] User not found in database:', {
+      userId,
+      email: token?.email,
+    });
+    return asErrorResponse(
+      'Your session has expired. Please sign in again.',
+      401,
+    );
+  }
+
   try {
     const payload = await request.json();
 
@@ -172,6 +219,19 @@ export const PATCH = async (request: NextRequest) => {
 
   if (!userId) {
     return asErrorResponse('Unauthorized', 401);
+  }
+
+  // Check if user exists in database
+  const user = dbOperations.findUserById(userId);
+  if (!user) {
+    console.error('[PATCH /api/past-resumes] User not found in database:', {
+      userId,
+      email: token?.email,
+    });
+    return asErrorResponse(
+      'Your session has expired. Please sign in again.',
+      401,
+    );
   }
 
   try {
