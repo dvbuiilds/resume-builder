@@ -20,7 +20,7 @@ export const PDFEducation: React.FC<PDFEducationProps> = ({
       <Text style={styles.heading}>{education.title}</Text>
       <View style={styles.horizontalRule} />
       {education.courses.map((course, index) => (
-        <View key={index} style={{ marginBottom: 10 }}>
+        <View key={index} style={{ marginBottom: 4 }}>
           <View style={styles.row}>
             <View style={styles.flex1}>
               <Text style={[styles.itemTitle, { fontWeight: 700 }]}>

@@ -30,7 +30,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <SessionProvider>
           <Navbar />
-          <main>{children}</main>
+          <main className="w-full">{children}</main>
         </SessionProvider>
       </body>
     </html>

@@ -13,9 +13,7 @@ export const PDFSocialHandles: React.FC<PDFSocialHandlesProps> = ({
 }) => {
   return (
     <View style={styles.section}>
-      <View
-        style={[styles.row, { justifyContent: 'center', marginBottom: 10 }]}
-      >
+      <View style={[styles.row, { justifyContent: 'center', marginBottom: 2 }]}>
         {socialHandles.map((handle, index) => (
           <React.Fragment key={index}>
             <Link

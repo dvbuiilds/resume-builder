@@ -17,7 +17,7 @@ export const PDFSkills: React.FC<PDFSkillsProps> = ({ skills, styles }) => {
       <Text style={styles.heading}>{skills.title}</Text>
       <View style={styles.horizontalRule} />
       {skills.skillSet.map((skillSet, index) => (
-        <View key={index} style={{ marginBottom: 8 }}>
+        <View key={index} style={{ marginBottom: 4 }}>
           <Text style={[styles.skillTitle, { fontWeight: 700 }]}>
             {skillSet.title}
           </Text>

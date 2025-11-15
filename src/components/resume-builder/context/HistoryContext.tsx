@@ -1,6 +1,5 @@
 'use client';
 
-import fetchWithTimeout from '@resume-builder/utils/fetchWithTimeout';
 import React, {
   createContext,
   useCallback,
@@ -10,7 +9,11 @@ import React, {
   useState,
 } from 'react';
 
-import { parseErrorMessage } from '@resume-builder/components/resume-builder/utils/parseErrorMessage';
+import {
+  getUserResumes,
+  refreshUserResumes,
+} from '@resume-builder/components/resume-builder/utils/userResumeData';
+import { useUserResumeStore } from '../store/userResumeStore';
 
 interface HistoryEntry {
   rowId: string;
@@ -34,36 +37,26 @@ const HistoryContext = createContext<HistoryContextValue | undefined>(
 export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const storeResumes = useUserResumeStore((state) => state.resumes);
+  const storeLoading = useUserResumeStore((state) => state.isLoading);
+  const storeError = useUserResumeStore((state) => state.error);
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync local state with store
+  useEffect(() => {
+    setEntries(storeResumes);
+    setLoading(storeLoading);
+    setError(storeError);
+  }, [storeResumes, storeLoading, storeError]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchWithTimeout(
-        '/api/past-resumes',
-        {
-          credentials: 'include',
-        },
-        2000,
-      );
-
-      if (!response.ok) {
-        const message = await parseErrorMessage(response);
-        throw new Error(message || 'Failed to load past resumes.');
-      }
-
-      const payload = (await response.json()) as {
-        data?: HistoryEntry[];
-      };
-
-      if (Array.isArray(payload?.data)) {
-        setEntries(payload.data);
-      } else {
-        setEntries([]);
-      }
+      await refreshUserResumes();
+      // State will be updated via useEffect when store updates
     } catch (err) {
       const fallbackMessage = 'Something went wrong. Please try again.';
       const message =
@@ -78,8 +71,11 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    refresh().catch(() => undefined);
-  }, [refresh]);
+    // Load resumes on mount using data layer (checks store first)
+    getUserResumes().catch(() => {
+      // Silently fail - error will be handled by store
+    });
+  }, []);
 
   const value = useMemo(
     () => ({

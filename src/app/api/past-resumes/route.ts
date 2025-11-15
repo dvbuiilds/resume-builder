@@ -84,3 +84,69 @@ export const POST = async (request: NextRequest) => {
     return asErrorResponse('Failed to save resume', 500);
   }
 };
+
+export const DELETE = async (request: NextRequest) => {
+  const token = await getToken({ req: request });
+  const userId = token?.id as string | undefined;
+
+  if (!userId) {
+    return asErrorResponse('Unauthorized', 401);
+  }
+
+  try {
+    const payload = await request.json();
+
+    const resumeId =
+      typeof payload?.resumeId === 'string' && payload.resumeId.trim()
+        ? payload.resumeId.trim()
+        : null;
+
+    if (!resumeId) {
+      return asErrorResponse('Invalid payload', 400);
+    }
+
+    dbOperations.deleteUserResume(userId, resumeId);
+
+    const rows = dbOperations.getUserResumes(userId);
+    return NextResponse.json({ data: serializeResumes(rows) }, { status: 200 });
+  } catch (err) {
+    console.error('Failed to delete resume', err);
+    if (err instanceof Error && err.message === 'Resume not found') {
+      return asErrorResponse('Resume not found', 404);
+    }
+    return asErrorResponse('Failed to delete resume', 500);
+  }
+};
+
+export const PATCH = async (request: NextRequest) => {
+  const token = await getToken({ req: request });
+  const userId = token?.id as string | undefined;
+
+  if (!userId) {
+    return asErrorResponse('Unauthorized', 401);
+  }
+
+  try {
+    const payload = await request.json();
+
+    const resumeId =
+      typeof payload?.resumeId === 'string' && payload.resumeId.trim()
+        ? payload.resumeId.trim()
+        : null;
+
+    if (!resumeId) {
+      return asErrorResponse('Invalid payload', 400);
+    }
+
+    dbOperations.restoreUserResume(userId, resumeId);
+
+    const rows = dbOperations.getUserResumes(userId);
+    return NextResponse.json({ data: serializeResumes(rows) }, { status: 200 });
+  } catch (err) {
+    console.error('Failed to restore resume', err);
+    if (err instanceof Error && err.message === 'Resume not found') {
+      return asErrorResponse('Resume not found', 404);
+    }
+    return asErrorResponse('Failed to restore resume', 500);
+  }
+};
