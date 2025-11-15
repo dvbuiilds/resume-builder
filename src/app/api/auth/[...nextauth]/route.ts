@@ -79,6 +79,12 @@ providers.push(
           name: name || null,
         });
 
+        console.log('[NextAuth Credentials] User created:', {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+        });
+
         return {
           id: user.id,
           email: user.email,
@@ -104,6 +110,12 @@ providers.push(
         if (!isValidPassword) {
           throw new Error('Invalid email or password');
         }
+
+        console.log('[NextAuth Credentials] User signed in:', {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+        });
 
         return {
           id: user.id,
@@ -142,6 +154,11 @@ const authOptions: NextAuthOptions = {
           if (!dbUser) {
             // Create new user without password
             const userId = generateUserId();
+            console.log('[NextAuth Google] Creating new user:', {
+              userId,
+              email,
+              name: googleProfile?.name || user.name,
+            });
             dbUser = dbOperations.createUser({
               id: userId,
               email,
@@ -149,7 +166,15 @@ const authOptions: NextAuthOptions = {
               name: googleProfile?.name || user.name || null,
               image: googleProfile?.picture || user.image || null,
             });
+            console.log('[NextAuth Google] User created:', {
+              userId: dbUser.id,
+              email: dbUser.email,
+            });
           } else {
+            console.log('[NextAuth Google] Existing user found:', {
+              userId: dbUser.id,
+              email: dbUser.email,
+            });
             // Update existing user info if needed
             dbOperations.updateUser(dbUser.id, {
               name:
@@ -164,6 +189,10 @@ const authOptions: NextAuthOptions = {
 
           // Update user object with database ID
           user.id = dbUser.id;
+          console.log('[NextAuth Google] User ID set in token:', {
+            userId: user.id,
+            email: user.email,
+          });
         }
       } catch (error) {
         console.error('Error during Google sign in:', error);
@@ -175,6 +204,12 @@ const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       // When user logs in for the first time
       if (user) {
+        console.log('[NextAuth JWT] Setting token for user:', {
+          userId: user.id,
+          email: user.email,
+          name: user.name,
+          provider: account?.provider || 'credentials',
+        });
         token.id = user.id;
         token.email = user.email || undefined;
         token.name = user.name || undefined;
