@@ -337,7 +337,7 @@ export const InputFieldV2: FC<InputFieldV2Props> = ({
               <button
                 onClick={handleApply}
                 disabled={isApplyDisabled}
-                className="w-full px-4 py-2 bg-green-500 text-white text-xs rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full px-4 py-2 bg-green-500 text-white text-xs rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Apply Selected
               </button>
