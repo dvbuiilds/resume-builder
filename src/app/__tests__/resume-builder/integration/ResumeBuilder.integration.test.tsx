@@ -24,7 +24,7 @@ describe('ResumeBuilder Integration Tests', () => {
       });
 
       expect(resumeData.current.title).toBe('Your Name');
-      expect(layout.current.displayMode).toBe('preview');
+      expect(layout.current.displayMode).toBe('collapsed');
       expect(theme.current.color).toBeTruthy();
       expect(theme.current.font).toBeTruthy();
     });
@@ -43,7 +43,7 @@ describe('ResumeBuilder Integration Tests', () => {
       });
 
       expect(resumeData.current.title).toBe('Jane Smith');
-      expect(layout.current.displayMode).toBe('preview');
+      expect(layout.current.displayMode).toBe('collapsed');
     });
 
     it('should update layout while maintaining resume data', () => {
@@ -98,7 +98,7 @@ describe('ResumeBuilder Integration Tests', () => {
         wrapper: LayoutProvider,
       });
 
-      expect(layout.current.displayMode).toBe('preview');
+      expect(layout.current.displayMode).toBe('collapsed');
 
       act(() => {
         layout.current.toggleDisplayMode('workExperience');
@@ -123,7 +123,7 @@ describe('ResumeBuilder Integration Tests', () => {
         layout.current.closeEditPanel();
       });
 
-      expect(layout.current.displayMode).toBe('preview');
+      expect(layout.current.displayMode).toBe('collapsed');
     });
 
     it('should switch between different sections', () => {
@@ -327,7 +327,7 @@ describe('ResumeBuilder Integration Tests', () => {
         layout.current.closeEditPanel();
       });
 
-      expect(layout.current.displayMode).toBe('preview');
+      expect(layout.current.displayMode).toBe('collapsed');
 
       // Verify all changes are maintained
       expect(resumeData.current.title).toBe('Jane Smith');

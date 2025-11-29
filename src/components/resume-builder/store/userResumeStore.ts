@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+
+import { createDualStorage } from '@resume-builder/lib/storage';
 
 import type { HistoryEntry } from '../context/HistoryContext';
 
@@ -19,29 +21,6 @@ interface UserResumeState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 }
-
-const dualStorage = createJSONStorage(() => {
-  if (typeof window === 'undefined') {
-    return {
-      getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {},
-    };
-  }
-
-  return {
-    getItem: (name: string) =>
-      window.localStorage.getItem(name) ?? window.sessionStorage.getItem(name),
-    setItem: (name: string, value: string) => {
-      window.localStorage.setItem(name, value);
-      window.sessionStorage.setItem(name, value);
-    },
-    removeItem: (name: string) => {
-      window.localStorage.removeItem(name);
-      window.sessionStorage.removeItem(name);
-    },
-  };
-});
 
 export const useUserResumeStore = create<UserResumeState>()(
   persist(
@@ -94,11 +73,14 @@ export const useUserResumeStore = create<UserResumeState>()(
         })),
 
       deleteResume: (resumeId) =>
-        set((state) => ({
-          resumes: state.resumes.filter((r) => r.resumeId !== resumeId),
-          resumeCount: Math.max(0, state.resumes.length - 1),
-          lastFetched: Date.now(),
-        })),
+        set((state) => {
+          const filtered = state.resumes.filter((r) => r.resumeId !== resumeId);
+          return {
+            resumes: filtered,
+            resumeCount: filtered.length,
+            lastFetched: Date.now(),
+          };
+        }),
 
       clearResumes: () =>
         set({
@@ -114,7 +96,7 @@ export const useUserResumeStore = create<UserResumeState>()(
     }),
     {
       name: 'user-resume-store',
-      storage: dualStorage,
+      storage: createDualStorage(),
       partialize: (state) => ({
         resumes: state.resumes,
         resumeCount: state.resumeCount,

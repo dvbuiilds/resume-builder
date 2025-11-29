@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  ReactNode,
+} from 'react';
 import type {
   Achievements,
   Activities,
@@ -171,27 +177,39 @@ export const ResumeDataProvider: React.FC<{ children: ReactNode }> = ({
     initialResumeData.achievements,
   );
 
+  const value = useMemo(
+    () => ({
+      title,
+      updateTitle,
+      socialHandles,
+      updateSocialHandles,
+      workExperience,
+      updateWorkExperience,
+      projects,
+      updateProjects,
+      education,
+      updateEducation,
+      activities,
+      updateActivities,
+      skills,
+      updateSkills,
+      achievements,
+      updateAchievements,
+    }),
+    [
+      title,
+      socialHandles,
+      workExperience,
+      projects,
+      education,
+      activities,
+      skills,
+      achievements,
+    ],
+  );
+
   return (
-    <ResumeDataContext.Provider
-      value={{
-        title,
-        updateTitle,
-        socialHandles,
-        updateSocialHandles,
-        workExperience,
-        updateWorkExperience,
-        projects,
-        updateProjects,
-        education,
-        updateEducation,
-        activities,
-        updateActivities,
-        skills,
-        updateSkills,
-        achievements,
-        updateAchievements,
-      }}
-    >
+    <ResumeDataContext.Provider value={value}>
       {children}
     </ResumeDataContext.Provider>
   );

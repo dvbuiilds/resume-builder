@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 import {
   getDescriptionSuggestionsWithGroq,
   GroqTimeoutError,
@@ -7,61 +6,40 @@ import {
 import { validateAISuggestionResponse } from '@resume-builder/components/resume-builder/types/ai-suggestion-schema';
 import { withTimeout } from '@resume-builder/utils/withTimeout';
 import { dbOperations } from '@resume-builder/lib/db';
+import { requireAuth } from '@resume-builder/lib/api-auth';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+} from '@resume-builder/lib/api-utils';
 
 const GROQ_TIMEOUT_MS = 60_000;
 
 export async function POST(req: NextRequest) {
-  const token = await getToken({ req });
-  const userId = token?.id as string | undefined;
-
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'You must be signed in to use AI suggestions.' },
-      { status: 401 },
-    );
-  }
-
-  // Check if user exists in database
-  const user = dbOperations.findUserById(userId);
-  if (!user) {
-    console.error('[POST /api/ai-suggestions] User not found in database:', {
-      userId,
-      email: token?.email,
-    });
-    return NextResponse.json(
-      { error: 'Your session has expired. Please sign in again.' },
-      { status: 401 },
-    );
-  }
-
-  // Check usage limit (resets after 24h)
-  const currentUsage = dbOperations.getAISuggestionUsage(userId);
-  if (currentUsage >= dbOperations.maxAISuggestionUsage) {
-    return NextResponse.json(
-      {
-        error:
-          'You have reached the maximum number of AI suggestions allowed (10 per 24 hours). Please try again later.',
-      },
-      { status: 429 },
-    );
-  }
-
   try {
+    const session = await requireAuth(
+      req,
+      'You must be signed in to use AI suggestions.',
+    );
+    const { userId } = session;
+
+    // Check usage limit (resets after 24h)
+    const currentUsage = dbOperations.getAISuggestionUsage(userId);
+    if (currentUsage >= dbOperations.maxAISuggestionUsage) {
+      return createErrorResponse(
+        'You have reached the maximum number of AI suggestions allowed (10 per 24 hours). Please try again later.',
+        429,
+      );
+    }
+
     const payload = await req.json();
     const { description, jobRole, companyName } = payload;
 
     if (!description || typeof description !== 'string') {
-      return NextResponse.json(
-        { error: 'Missing or invalid description string.' },
-        { status: 400 },
-      );
+      return createErrorResponse('Missing or invalid description string.', 400);
     }
 
     if (description.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Description cannot be empty.' },
-        { status: 400 },
-      );
+      return createErrorResponse('Description cannot be empty.', 400);
     }
 
     const result = await withTimeout(
@@ -77,10 +55,7 @@ export async function POST(req: NextRequest) {
     const validatedSuggestions = validateAISuggestionResponse(result);
 
     if (!validatedSuggestions) {
-      return NextResponse.json(
-        { error: 'AI did not return valid suggestions.' },
-        { status: 502 },
-      );
+      return createErrorResponse('AI did not return valid suggestions.', 502);
     }
 
     // Increment usage counter
@@ -97,49 +72,46 @@ export async function POST(req: NextRequest) {
       { status: 200 },
     );
   } catch (err: unknown) {
+    if (err instanceof NextResponse) {
+      // Auth error from requireAuth
+      return err;
+    }
+
     if (err instanceof GroqTimeoutError) {
-      return NextResponse.json({ error: err.message }, { status: 504 });
+      return createErrorResponse(err.message, 504);
     }
 
     const message =
       err instanceof Error ? err.message : 'Internal server error';
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return createErrorResponse(message, 500);
   }
 }
 
 // GET endpoint to fetch current usage
 export async function GET(req: NextRequest) {
-  const token = await getToken({ req });
-  const userId = token?.id as string | undefined;
+  try {
+    const session = await requireAuth(req, 'You must be signed in.');
+    const { userId } = session;
 
-  if (!userId) {
+    const usageCount = dbOperations.getAISuggestionUsage(userId);
+
     return NextResponse.json(
-      { error: 'You must be signed in.' },
-      { status: 401 },
+      {
+        usageCount,
+        maxUsage: dbOperations.maxAISuggestionUsage,
+      },
+      { status: 200 },
     );
+  } catch (err: unknown) {
+    if (err instanceof NextResponse) {
+      // Auth error from requireAuth
+      return err;
+    }
+
+    const message =
+      err instanceof Error ? err.message : 'Internal server error';
+
+    return createErrorResponse(message, 500);
   }
-
-  // Check if user exists in database
-  const user = dbOperations.findUserById(userId);
-  if (!user) {
-    console.error('[GET /api/ai-suggestions] User not found in database:', {
-      userId,
-      email: token?.email,
-    });
-    return NextResponse.json(
-      { error: 'Your session has expired. Please sign in again.' },
-      { status: 401 },
-    );
-  }
-
-  const usageCount = dbOperations.getAISuggestionUsage(userId);
-
-  return NextResponse.json(
-    {
-      usageCount,
-      maxUsage: dbOperations.maxAISuggestionUsage,
-    },
-    { status: 200 },
-  );
 }

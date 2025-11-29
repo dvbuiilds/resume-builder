@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
+import { produce } from 'immer';
+
+import { createDualStorage } from '@resume-builder/lib/storage';
 
 import type {
   Achievements,
@@ -224,29 +227,6 @@ const initialResumeData: Pick<
   },
 };
 
-const dualStorage = createJSONStorage(() => {
-  if (typeof window === 'undefined') {
-    return {
-      getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {},
-    };
-  }
-
-  return {
-    getItem: (name: string) =>
-      window.localStorage.getItem(name) ?? window.sessionStorage.getItem(name),
-    setItem: (name: string, value: string) => {
-      window.localStorage.setItem(name, value);
-      window.sessionStorage.setItem(name, value);
-    },
-    removeItem: (name: string) => {
-      window.localStorage.removeItem(name);
-      window.sessionStorage.removeItem(name);
-    },
-  };
-});
-
 export const useResumeStore = create<ResumeState>()(
   persist(
     (set, get) => ({
@@ -259,11 +239,11 @@ export const useResumeStore = create<ResumeState>()(
       // Social Handles
       setSocialHandles: (handles) => set({ socialHandles: handles }),
       updateSocialHandleAt: (index, patch) =>
-        set((state) => ({
-          socialHandles: state.socialHandles.map((h, i) =>
-            i === index ? { ...h, ...patch } : h,
-          ),
-        })),
+        set(
+          produce((state) => {
+            Object.assign(state.socialHandles[index], patch);
+          }),
+        ),
       addSocialHandle: (item) =>
         set((state) => ({
           socialHandles: [
@@ -298,62 +278,41 @@ export const useResumeStore = create<ResumeState>()(
           },
         })),
       updateExperience: (index, patch) =>
-        set((state) => ({
-          workExperience: {
-            ...state.workExperience,
-            experience: state.workExperience.experience.map((e, i) =>
-              i === index ? { ...e, ...patch } : e,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            Object.assign(state.workExperience.experience[index], patch);
+          }),
+        ),
       removeExperience: (index) =>
-        set((state) => ({
-          workExperience: {
-            ...state.workExperience,
-            experience: state.workExperience.experience.filter(
-              (_, i) => i !== index,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.workExperience.experience.splice(index, 1);
+          }),
+        ),
       addExperienceDescription: (expIndex, value) =>
-        set((state) => ({
-          workExperience: {
-            ...state.workExperience,
-            experience: state.workExperience.experience.map((e, i) =>
-              i === expIndex
-                ? { ...e, description: [...e.description, value ?? ''] }
-                : e,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.workExperience.experience[expIndex].description.push(
+              value ?? '',
+            );
+          }),
+        ),
       updateExperienceDescription: (expIndex, descIndex, value) =>
-        set((state) => ({
-          workExperience: {
-            ...state.workExperience,
-            experience: state.workExperience.experience.map((e, i) => {
-              if (i !== expIndex) return e;
-              const next = [...e.description];
-              next[descIndex] = value;
-              return { ...e, description: next };
-            }),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.workExperience.experience[expIndex].description[descIndex] =
+              value;
+          }),
+        ),
       removeExperienceDescription: (expIndex, descIndex) =>
-        set((state) => ({
-          workExperience: {
-            ...state.workExperience,
-            experience: state.workExperience.experience.map((e, i) =>
-              i === expIndex
-                ? {
-                    ...e,
-                    description: e.description.filter(
-                      (_, di) => di !== descIndex,
-                    ),
-                  }
-                : e,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.workExperience.experience[expIndex].description.splice(
+              descIndex,
+              1,
+            );
+          }),
+        ),
 
       // Projects
       setProjectsTitle: (value) =>
@@ -375,60 +334,35 @@ export const useResumeStore = create<ResumeState>()(
           },
         })),
       updateProject: (index, patch) =>
-        set((state) => ({
-          projects: {
-            ...state.projects,
-            projects: state.projects.projects.map((p, i) =>
-              i === index ? { ...p, ...patch } : p,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            Object.assign(state.projects.projects[index], patch);
+          }),
+        ),
       removeProject: (index) =>
-        set((state) => ({
-          projects: {
-            ...state.projects,
-            projects: state.projects.projects.filter((_, i) => i !== index),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.projects.projects.splice(index, 1);
+          }),
+        ),
       addProjectDescription: (projIndex, value) =>
-        set((state) => ({
-          projects: {
-            ...state.projects,
-            projects: state.projects.projects.map((p, i) =>
-              i === projIndex
-                ? { ...p, description: [...p.description, value ?? ''] }
-                : p,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.projects.projects[projIndex].description.push(value ?? '');
+          }),
+        ),
       updateProjectDescription: (projIndex, descIndex, value) =>
-        set((state) => ({
-          projects: {
-            ...state.projects,
-            projects: state.projects.projects.map((p, i) => {
-              if (i !== projIndex) return p;
-              const next = [...p.description];
-              next[descIndex] = value;
-              return { ...p, description: next };
-            }),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.projects.projects[projIndex].description[descIndex] = value;
+          }),
+        ),
       removeProjectDescription: (projIndex, descIndex) =>
-        set((state) => ({
-          projects: {
-            ...state.projects,
-            projects: state.projects.projects.map((p, i) =>
-              i === projIndex
-                ? {
-                    ...p,
-                    description: p.description.filter(
-                      (_, di) => di !== descIndex,
-                    ),
-                  }
-                : p,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.projects.projects[projIndex].description.splice(descIndex, 1);
+          }),
+        ),
 
       // Education
       setEducationTitle: (value) =>
@@ -451,21 +385,17 @@ export const useResumeStore = create<ResumeState>()(
           },
         })),
       updateCourse: (index, patch) =>
-        set((state) => ({
-          education: {
-            ...state.education,
-            courses: state.education.courses.map((c, i) =>
-              i === index ? { ...c, ...patch } : c,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            Object.assign(state.education.courses[index], patch);
+          }),
+        ),
       removeCourse: (index) =>
-        set((state) => ({
-          education: {
-            ...state.education,
-            courses: state.education.courses.filter((_, i) => i !== index),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.education.courses.splice(index, 1);
+          }),
+        ),
 
       // Activities
       setActivitiesTitle: (value) =>
@@ -487,62 +417,41 @@ export const useResumeStore = create<ResumeState>()(
           },
         })),
       updateActivity: (index, patch) =>
-        set((state) => ({
-          activities: {
-            ...state.activities,
-            activities: state.activities.activities.map((a, i) =>
-              i === index ? { ...a, ...patch } : a,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            Object.assign(state.activities.activities[index], patch);
+          }),
+        ),
       removeActivity: (index) =>
-        set((state) => ({
-          activities: {
-            ...state.activities,
-            activities: state.activities.activities.filter(
-              (_, i) => i !== index,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.activities.activities.splice(index, 1);
+          }),
+        ),
       addActivityDescription: (actIndex, value) =>
-        set((state) => ({
-          activities: {
-            ...state.activities,
-            activities: state.activities.activities.map((a, i) =>
-              i === actIndex
-                ? { ...a, descriptions: [...a.descriptions, value ?? ''] }
-                : a,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.activities.activities[actIndex].descriptions.push(
+              value ?? '',
+            );
+          }),
+        ),
       updateActivityDescription: (actIndex, descIndex, value) =>
-        set((state) => ({
-          activities: {
-            ...state.activities,
-            activities: state.activities.activities.map((a, i) => {
-              if (i !== actIndex) return a;
-              const next = [...a.descriptions];
-              next[descIndex] = value;
-              return { ...a, descriptions: next };
-            }),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.activities.activities[actIndex].descriptions[descIndex] =
+              value;
+          }),
+        ),
       removeActivityDescription: (actIndex, descIndex) =>
-        set((state) => ({
-          activities: {
-            ...state.activities,
-            activities: state.activities.activities.map((a, i) =>
-              i === actIndex
-                ? {
-                    ...a,
-                    descriptions: a.descriptions.filter(
-                      (_, di) => di !== descIndex,
-                    ),
-                  }
-                : a,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.activities.activities[actIndex].descriptions.splice(
+              descIndex,
+              1,
+            );
+          }),
+        ),
 
       // Skills
       setSkillsTitle: (value) =>
@@ -558,56 +467,35 @@ export const useResumeStore = create<ResumeState>()(
           },
         })),
       updateSkillSet: (index, patch) =>
-        set((state) => ({
-          skills: {
-            ...state.skills,
-            skillSet: state.skills.skillSet.map((s, i) =>
-              i === index ? { ...s, ...patch } : s,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            Object.assign(state.skills.skillSet[index], patch);
+          }),
+        ),
       removeSkillSet: (index) =>
-        set((state) => ({
-          skills: {
-            ...state.skills,
-            skillSet: state.skills.skillSet.filter((_, i) => i !== index),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.skills.skillSet.splice(index, 1);
+          }),
+        ),
       addSkillToSet: (setIndex, value) =>
-        set((state) => ({
-          skills: {
-            ...state.skills,
-            skillSet: state.skills.skillSet.map((s, i) =>
-              i === setIndex ? { ...s, skills: [...s.skills, value ?? ''] } : s,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.skills.skillSet[setIndex].skills.push(value ?? '');
+          }),
+        ),
       updateSkillInSet: (setIndex, skillIndex, value) =>
-        set((state) => ({
-          skills: {
-            ...state.skills,
-            skillSet: state.skills.skillSet.map((s, i) => {
-              if (i !== setIndex) return s;
-              const next = [...s.skills];
-              next[skillIndex] = value;
-              return { ...s, skills: next };
-            }),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.skills.skillSet[setIndex].skills[skillIndex] = value;
+          }),
+        ),
       removeSkillFromSet: (setIndex, skillIndex) =>
-        set((state) => ({
-          skills: {
-            ...state.skills,
-            skillSet: state.skills.skillSet.map((s, i) =>
-              i === setIndex
-                ? {
-                    ...s,
-                    skills: s.skills.filter((_, si) => si !== skillIndex),
-                  }
-                : s,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            state.skills.skillSet[setIndex].skills.splice(skillIndex, 1);
+          }),
+        ),
 
       // Achievements
       setAchievementsTitle: (value) =>
@@ -630,14 +518,11 @@ export const useResumeStore = create<ResumeState>()(
           },
         })),
       updateAchievement: (index, patch) =>
-        set((state) => ({
-          achievements: {
-            ...state.achievements,
-            achievementList: state.achievements.achievementList.map((a, i) =>
-              i === index ? { ...a, ...patch } : a,
-            ),
-          },
-        })),
+        set(
+          produce((state) => {
+            Object.assign(state.achievements.achievementList[index], patch);
+          }),
+        ),
       removeAchievement: (index) =>
         set((state) => ({
           achievements: {
@@ -689,7 +574,7 @@ export const useResumeStore = create<ResumeState>()(
     }),
     {
       name: 'resume-builder-state',
-      storage: dualStorage,
+      storage: createDualStorage(),
       partialize: (state) => ({
         resumeId: state.resumeId,
         title: state.title,
