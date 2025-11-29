@@ -38,6 +38,9 @@ export const exportResumeToPdf = async (
   data: ExportResumeData,
   filename?: string,
 ): Promise<void> => {
+  let url: string | null = null;
+  let link: HTMLAnchorElement | null = null;
+
   try {
     // Generate filename if not provided
     const pdfFilename =
@@ -62,18 +65,22 @@ export const exportResumeToPdf = async (
     ).toBlob();
 
     // Create download link
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    url = URL.createObjectURL(blob);
+    link = document.createElement('a');
     link.href = url;
     link.download = pdfFilename;
     document.body.appendChild(link);
     link.click();
-
-    // Cleanup
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   } catch (error) {
     console.error('Error exporting PDF:', error);
     throw new Error('Failed to generate PDF. Please try again.');
+  } finally {
+    // Ensure cleanup happens even if there's an error
+    if (link && document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
   }
 };

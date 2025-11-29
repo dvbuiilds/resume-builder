@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import {
   MdOutlineTitle,
   MdOutlineWorkOutline,
@@ -136,6 +136,12 @@ export const EditPanel: React.FC = () => {
     text: string;
   } | null>(null);
 
+  // Use ref for stable reference to entries
+  const entriesRef = useRef(entries);
+  useEffect(() => {
+    entriesRef.current = entries;
+  }, [entries]);
+
   const handleSave = useCallback(async () => {
     if (isSaving) return;
 
@@ -144,7 +150,7 @@ export const EditPanel: React.FC = () => {
 
     try {
       const snapshot = getResumeSnapshotForSave();
-      const existing = entries.find(
+      const existing = entriesRef.current.find(
         (entry) => entry.resumeId === snapshot.resumeId,
       );
 
@@ -194,7 +200,7 @@ export const EditPanel: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [entries, isSaving, setEntries]);
+  }, [isSaving, setEntries]);
 
   const onTabClick = (sectionName: ActiveSectionName) => {
     if (activeSection === sectionName) {

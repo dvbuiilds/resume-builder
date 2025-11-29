@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
+import { logger } from './logger';
 
 const MAX_RESUMES_PER_USER = 4;
 const MAX_TRANSFORM_USAGE = 4;
@@ -71,7 +72,7 @@ try {
   }
 } catch (err) {
   // Table might not exist yet, which is fine - it will be created with deletedAt
-  console.warn('Migration check for deletedAt column failed:', err);
+  logger.warn('Migration check for deletedAt column failed:', err);
 }
 
 // Migration: Add AI suggestion usage columns if they don't exist
@@ -96,7 +97,7 @@ try {
     db.exec('ALTER TABLE user_usage ADD COLUMN aiSuggestionLastReset INTEGER');
   }
 } catch (err) {
-  console.warn('Migration check for AI suggestion columns failed:', err);
+  logger.warn('Migration check for AI suggestion columns failed:', err);
 }
 
 export interface User {
@@ -168,7 +169,7 @@ export const dbOperations = {
   ): void => {
     const now = Date.now();
 
-    console.log('[dbOperations.upsertUserResume] Starting upsert:', {
+    logger.info('[dbOperations.upsertUserResume] Starting upsert:', {
       userId,
       resumeId: options.resumeId,
       hasRowId: !!options.resumeRowId,
@@ -176,14 +177,14 @@ export const dbOperations = {
 
     // Verify user exists before attempting upsert
     const userCheck = dbOperations.findUserById(userId);
-    console.log('[dbOperations.upsertUserResume] User verification:', {
+    logger.info('[dbOperations.upsertUserResume] User verification:', {
       userId,
       userExists: !!userCheck,
       userEmail: userCheck?.email,
     });
 
     if (!userCheck) {
-      console.error(
+      logger.error(
         '[dbOperations.upsertUserResume] User not found in database:',
         {
           userId,
@@ -199,7 +200,7 @@ export const dbOperations = {
       | { id: string }
       | undefined;
 
-    console.log('[dbOperations.upsertUserResume] Existing resume check:', {
+    logger.info('[dbOperations.upsertUserResume] Existing resume check:', {
       userId,
       resumeId: options.resumeId,
       exists: !!existing,
@@ -208,7 +209,7 @@ export const dbOperations = {
 
     const upsert = db.transaction(() => {
       if (existing) {
-        console.log(
+        logger.info(
           '[dbOperations.upsertUserResume] Updating existing resume:',
           {
             userId,
@@ -222,7 +223,7 @@ export const dbOperations = {
         updateStmt.run(options.data, now, existing.id);
       } else {
         const rowId = options.resumeRowId ?? crypto.randomUUID();
-        console.log('[dbOperations.upsertUserResume] Inserting new resume:', {
+        logger.info('[dbOperations.upsertUserResume] Inserting new resume:', {
           userId,
           resumeId: options.resumeId,
           rowId,
@@ -232,13 +233,13 @@ export const dbOperations = {
         );
         try {
           insertStmt.run(rowId, userId, options.resumeId, options.data, now);
-          console.log('[dbOperations.upsertUserResume] Insert successful:', {
+          logger.info('[dbOperations.upsertUserResume] Insert successful:', {
             userId,
             resumeId: options.resumeId,
             rowId,
           });
         } catch (insertError) {
-          console.error('[dbOperations.upsertUserResume] Insert failed:', {
+          logger.error('[dbOperations.upsertUserResume] Insert failed:', {
             userId,
             resumeId: options.resumeId,
             rowId,
@@ -252,28 +253,26 @@ export const dbOperations = {
         }
       }
 
-      const rows = db
-        .prepare(
-          'SELECT id FROM user_resumes WHERE userId = ? AND (deletedAt IS NULL OR deletedAt = 0) ORDER BY updatedAt DESC',
-        )
-        .all(userId) as Array<{ id: string }>;
-
-      if (rows.length > MAX_RESUMES_PER_USER) {
-        const idsToDelete = rows
-          .slice(MAX_RESUMES_PER_USER)
-          .map((row) => row.id);
-        const deleteStmt = db.prepare(
-          `UPDATE user_resumes SET deletedAt = ? WHERE id IN (${idsToDelete
-            .map(() => '?')
-            .join(',')})`,
-        );
-        deleteStmt.run(now, ...idsToDelete);
-      }
+      // Use efficient subquery to directly update old records without fetching all
+      const cleanupStmt = db.prepare(`
+        UPDATE user_resumes 
+        SET deletedAt = ? 
+        WHERE userId = ? 
+          AND (deletedAt IS NULL OR deletedAt = 0)
+          AND id NOT IN (
+            SELECT id FROM user_resumes 
+            WHERE userId = ? 
+              AND (deletedAt IS NULL OR deletedAt = 0)
+            ORDER BY updatedAt DESC 
+            LIMIT ?
+          )
+      `);
+      cleanupStmt.run(now, userId, userId, MAX_RESUMES_PER_USER);
     });
 
     try {
       upsert();
-      console.log(
+      logger.info(
         '[dbOperations.upsertUserResume] Upsert completed successfully:',
         {
           userId,
@@ -281,7 +280,7 @@ export const dbOperations = {
         },
       );
     } catch (error) {
-      console.error(
+      logger.error(
         '[dbOperations.upsertUserResume] Upsert transaction failed:',
         {
           userId,
@@ -304,20 +303,20 @@ export const dbOperations = {
   },
 
   incrementTransformUsage: (userId: string) => {
-    console.log('[dbOperations.incrementTransformUsage] Starting:', {
+    logger.info('[dbOperations.incrementTransformUsage] Starting:', {
       userId,
     });
 
     // Verify user exists before attempting to increment usage
     const userCheck = dbOperations.findUserById(userId);
-    console.log('[dbOperations.incrementTransformUsage] User verification:', {
+    logger.info('[dbOperations.incrementTransformUsage] User verification:', {
       userId,
       userExists: !!userCheck,
       userEmail: userCheck?.email,
     });
 
     if (!userCheck) {
-      console.error(
+      logger.error(
         '[dbOperations.incrementTransformUsage] User not found in database:',
         {
           userId,
@@ -334,7 +333,7 @@ export const dbOperations = {
         DO UPDATE SET transformUsage = transformUsage + 1
       `);
       upsert.run(userId);
-      console.log(
+      logger.info(
         '[dbOperations.incrementTransformUsage] Usage incremented successfully:',
         {
           userId,
@@ -342,7 +341,7 @@ export const dbOperations = {
         },
       );
     } catch (error) {
-      console.error(
+      logger.error(
         '[dbOperations.incrementTransformUsage] Failed to increment usage:',
         {
           userId,
