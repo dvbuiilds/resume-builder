@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useResumeFontStyles } from '@resume-builder/components/resume-builder/hooks/useResumeFontStyles';
+import type { ThemeFontValues } from '@resume-builder/components/resume-builder/types/theme';
 
 describe('useResumeFontStyles', () => {
   const cormorantGaramondClassName = 'font-cormorant';
@@ -16,7 +17,10 @@ describe('useResumeFontStyles', () => {
         }),
       );
 
-      expect(result.current.className).toBe(cormorantGaramondClassName);
+      // Implementation adds 'cormorant-scale' to the className
+      expect(result.current.className).toBe(
+        `${cormorantGaramondClassName} cormorant-scale`,
+      );
       expect(result.current.style).toEqual({});
     });
   });
@@ -79,10 +83,14 @@ describe('useResumeFontStyles', () => {
 
     it('should return new object reference when font changes', () => {
       const { result, rerender } = renderHook(
-        (props) => useResumeFontStyles(props),
+        (props: {
+          font: ThemeFontValues;
+          cormorantGaramondClassName: string;
+          interClassName: string;
+        }) => useResumeFontStyles(props),
         {
           initialProps: {
-            font: 'Inter' as const,
+            font: 'Inter' as ThemeFontValues,
             cormorantGaramondClassName,
             interClassName,
           },
@@ -91,14 +99,17 @@ describe('useResumeFontStyles', () => {
 
       const firstResult = result.current;
 
+      // Change font to trigger new object
       rerender({
-        font: 'Inter',
+        font: 'Cormorant Garamond' as ThemeFontValues,
         cormorantGaramondClassName,
         interClassName,
       });
 
       expect(result.current).not.toBe(firstResult);
-      expect(result.current.className).toBe(cormorantGaramondClassName);
+      expect(result.current.className).toBe(
+        `${cormorantGaramondClassName} cormorant-scale`,
+      );
     });
 
     it('should return new object reference when className props change', () => {
@@ -157,7 +168,9 @@ describe('useResumeFontStyles', () => {
         );
 
         if (font === 'Cormorant Garamond') {
-          expect(result.current.className).toBe(cormorantGaramondClassName);
+          expect(result.current.className).toBe(
+            `${cormorantGaramondClassName} cormorant-scale`,
+          );
           expect(result.current.style).toEqual({});
         } else if (font === 'Inter') {
           expect(result.current.className).toBe(interClassName);

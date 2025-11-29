@@ -10,7 +10,10 @@ import {
   mockClick,
   mockCreateObjectURL,
   mockRevokeObjectURL,
+  resetPdfMock,
+  mockPdf,
 } from '../test-utils/mocks';
+import { themeColorsReadOnly } from '@resume-builder/components/resume-builder/config/theme-config';
 
 describe('exportResumeToPdf', () => {
   // Common test data
@@ -21,10 +24,12 @@ describe('exportResumeToPdf', () => {
 
   beforeEach(() => {
     setupDOM();
+    resetPdfMock();
   });
 
   afterEach(() => {
     cleanupDOM();
+    resetPdfMock();
   });
 
   describe('PDF generation', () => {
@@ -124,7 +129,7 @@ describe('exportResumeToPdf', () => {
         exportResumeToPdf({
           ...completeResumeData,
           sectionsOrder,
-          color: '#00008B', // darkBlue from theme config
+          color: themeColorsReadOnly.darkBlue, // darkBlue from theme config
           font: 'Inter',
         }),
       ).rejects.toThrow();
@@ -135,7 +140,7 @@ describe('exportResumeToPdf', () => {
         exportResumeToPdf({
           ...completeResumeData,
           sectionsOrder,
-          color: '#006400', // darkGreen from theme config
+          color: themeColorsReadOnly.black, // Using black since darkGreen is commented out in theme config
           font: 'Cormorant Garamond',
         }),
       ).rejects.toThrow();
@@ -155,8 +160,7 @@ describe('exportResumeToPdf', () => {
 
   describe('Error handling', () => {
     it('should throw error when PDF generation fails', async () => {
-      // Mock pdf().toBlob to reject
-      const { mockPdf } = await import('../test-utils/mocks');
+      // Set up mock to reject
       mockPdf.mockReturnValueOnce({
         toBlob: vi.fn().mockRejectedValue(new Error('PDF generation failed')),
       });

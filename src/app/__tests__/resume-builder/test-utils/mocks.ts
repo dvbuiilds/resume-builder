@@ -46,18 +46,57 @@ export const mockRemoveChild = vi.fn();
 export const mockClick = vi.fn();
 export const mockCreateObjectURL = vi.fn(() => 'blob:mock-url');
 export const mockRevokeObjectURL = vi.fn();
+export const mockContains = vi.fn<(node: Node | null) => boolean>();
 
 export const setupDOM = () => {
+  // Create a proper mock element that can be used with contains()
+  const mockLinkElement = {
+    href: '',
+    download: '',
+    click: mockClick,
+    nodeType: 1, // ELEMENT_NODE
+    parentNode: null as Node | null,
+  } as any;
+
+  // Store reference to the created element
+  let createdElement: any = null;
+
   global.document.createElement = mockCreateElement;
   global.document.body.appendChild = mockAppendChild;
   global.document.body.removeChild = mockRemoveChild;
   global.URL.createObjectURL = mockCreateObjectURL;
   global.URL.revokeObjectURL = mockRevokeObjectURL;
 
-  mockCreateElement.mockReturnValue({
-    href: '',
-    download: '',
-    click: mockClick,
+  // Mock contains to return true when element was appended
+  const originalContains = global.document.body.contains;
+  mockContains.mockImplementation((node: Node | null) => {
+    if (node === createdElement || node === mockLinkElement) return true;
+    if (originalContains && typeof originalContains === 'function') {
+      try {
+        return originalContains.call(global.document.body, node);
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+  global.document.body.contains =
+    mockContains as typeof global.document.body.contains;
+
+  mockCreateElement.mockImplementation((tagName: string) => {
+    if (tagName === 'a') {
+      createdElement = { ...mockLinkElement };
+      return createdElement;
+    }
+    return document.createElement(tagName);
+  });
+
+  mockAppendChild.mockImplementation((child: Node) => {
+    createdElement = child;
+    if (child && typeof child === 'object') {
+      (child as any).parentNode = global.document.body;
+    }
+    return child;
   });
 };
 
@@ -68,6 +107,7 @@ export const cleanupDOM = () => {
   mockClick.mockClear();
   mockCreateObjectURL.mockClear();
   mockRevokeObjectURL.mockClear();
+  mockContains.mockClear();
 };
 
 export const resetPdfMock = () => {
