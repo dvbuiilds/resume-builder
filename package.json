@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "NODE_ENV=development next dev",
-    "build": "rm -r .next && next build",
+    "build": "next build",
     "start": "NODE_ENV=production next start",
     "lint": "next lint",
     "test": "vitest run",
@@ -40,6 +40,7 @@
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@tailwindcss/postcss": "^4.2.4",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
     "eslint": "^10.2.1",
