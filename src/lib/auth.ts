@@ -15,8 +15,8 @@ export function validatePassword(password: string): boolean {
 }
 
 // Check if email already exists
-export function emailExists(email: string): boolean {
-  const user = dbOperations.findUserByEmail(email);
+export async function emailExists(email: string): Promise<boolean> {
+  const user = await dbOperations.findUserByEmail(email);
   return user !== null;
 }
 

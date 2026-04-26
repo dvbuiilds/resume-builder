@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const { userId } = session;
 
     // Check usage limit (resets after 24h)
-    const currentUsage = dbOperations.getAISuggestionUsage(userId);
+    const currentUsage = await dbOperations.getAISuggestionUsage(userId);
     if (currentUsage >= dbOperations.maxAISuggestionUsage) {
       return createErrorResponse(
         'You have reached the maximum number of AI suggestions allowed (10 per 24 hours). Please try again later.',
@@ -59,10 +59,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Increment usage counter
-    dbOperations.incrementAISuggestionUsage(userId);
+    await dbOperations.incrementAISuggestionUsage(userId);
 
     // Get updated usage count
-    const updatedUsage = dbOperations.getAISuggestionUsage(userId);
+    const updatedUsage = await dbOperations.getAISuggestionUsage(userId);
 
     return NextResponse.json(
       {
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
     const session = await requireAuth(req, 'You must be signed in.');
     const { userId } = session;
 
-    const usageCount = dbOperations.getAISuggestionUsage(userId);
+    const usageCount = await dbOperations.getAISuggestionUsage(userId);
 
     return NextResponse.json(
       {

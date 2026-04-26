@@ -1,441 +1,986 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { dbOperations } from '@resume-builder/lib/db';
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock better-sqlite3
-const mockDb = {
-  prepare: vi.fn(),
-  exec: vi.fn(),
-  pragma: vi.fn(),
-};
-
-const mockStmt = {
-  run: vi.fn(),
-  get: vi.fn(),
-  all: vi.fn(),
-};
-
-vi.mock('better-sqlite3', () => {
-  return {
-    default: vi.fn(() => mockDb),
+const { mockClient } = vi.hoisted(() => {
+  const mockClient = {
+    execute: vi.fn(),
+    executeMultiple: vi.fn(),
+    transaction: vi.fn(),
   };
+  return { mockClient };
 });
 
-describe('dbOperations', () => {
+vi.mock("@libsql/client", () => ({
+  createClient: vi.fn(() => mockClient),
+}));
+
+import { dbOperations, __resetDbInitForTests } from "@resume-builder/lib/db";
+
+function migrationExecuteHandler() {
+  return async (stmt: { sql: string } | string) => {
+    const sql = typeof stmt === "string" ? stmt : stmt.sql;
+    if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+    if (sql.includes("PRAGMA table_info(user_resumes)")) {
+      return { rows: [{ name: "deletedAt" }] };
+    }
+    if (sql.includes("PRAGMA table_info(user_usage)")) {
+      return {
+        rows: [
+          { name: "aiSuggestionUsage" },
+          { name: "aiSuggestionLastReset" },
+        ],
+      };
+    }
+    return { rows: [] };
+  };
+}
+
+describe("dbOperations", () => {
   beforeEach(() => {
+    __resetDbInitForTests();
     vi.clearAllMocks();
-    mockDb.prepare.mockReturnValue(mockStmt);
-    mockStmt.run.mockReturnValue({ lastInsertRowid: 1 });
-    mockStmt.get.mockReturnValue(undefined);
-    mockStmt.all.mockReturnValue([]);
+    mockClient.executeMultiple.mockResolvedValue(undefined);
+    mockClient.execute.mockImplementation(migrationExecuteHandler());
+    mockClient.transaction.mockReset();
   });
 
-  describe('createUser', () => {
-    it('should create a new user', () => {
+  describe("createUser", () => {
+    it("should create a new user", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("INSERT INTO users"))
+            return { rows: [], rowsAffected: 1 };
+          return { rows: [] };
+        },
+      );
+
       const userData = {
-        id: 'user-123',
-        email: 'test@example.com',
-        password: 'hashed-password',
-        name: 'Test User',
-        image: 'https://example.com/image.jpg',
+        id: "user-123",
+        email: "test@example.com",
+        password: "hashed-password",
+        name: "Test User",
+        image: "https://example.com/image.jpg",
       };
 
-      const result = dbOperations.createUser(userData);
+      const result = await dbOperations.createUser(userData);
 
-      expect(mockStmt.run).toHaveBeenCalledWith(
-        userData.id,
-        userData.email,
-        userData.password,
-        userData.name,
-        userData.image,
-        expect.any(Number),
+      expect(mockClient.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sql: expect.stringContaining("INSERT INTO users"),
+          args: [
+            userData.id,
+            userData.email,
+            userData.password,
+            userData.name,
+            userData.image,
+            expect.any(Number),
+          ],
+        }),
       );
       expect(result.id).toBe(userData.id);
       expect(result.email).toBe(userData.email);
       expect(result.createdAt).toBeGreaterThan(0);
     });
 
-    it('should handle null optional fields', () => {
+    it("should handle null optional fields", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("INSERT INTO users"))
+            return { rows: [], rowsAffected: 1 };
+          return { rows: [] };
+        },
+      );
+
       const userData = {
-        id: 'user-123',
-        email: 'test@example.com',
+        id: "user-123",
+        email: "test@example.com",
         password: null,
       };
 
-      const result = dbOperations.createUser(userData);
+      const result = await dbOperations.createUser(userData);
 
-      expect(mockStmt.run).toHaveBeenCalledWith(
-        userData.id,
-        userData.email,
-        null,
-        null,
-        null,
-        expect.any(Number),
+      expect(mockClient.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          args: [
+            userData.id,
+            userData.email,
+            null,
+            null,
+            null,
+            expect.any(Number),
+          ],
+        }),
       );
       expect(result.name).toBeNull();
       expect(result.image).toBeNull();
     });
   });
 
-  describe('getUserResumes', () => {
-    it('should return user resumes', () => {
+  describe("getUserResumes", () => {
+    it("should return user resumes", async () => {
       const mockResumes = [
         {
-          id: 'row-1',
-          resumeId: 'resume-1',
+          id: "row-1",
+          resumeId: "resume-1",
           data: '{"title":"Test"}',
           updatedAt: Date.now(),
         },
       ];
 
-      mockStmt.all.mockReturnValue(mockResumes);
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (
+            sql.includes(
+              "SELECT id, resumeId, data, updatedAt FROM user_resumes",
+            )
+          ) {
+            return { rows: mockResumes };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.getUserResumes('user-123');
+      const result = await dbOperations.getUserResumes("user-123");
 
       expect(result).toEqual(mockResumes);
-      expect(mockStmt.all).toHaveBeenCalledWith('user-123', 4);
+      expect(mockClient.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          args: ["user-123", 4],
+        }),
+      );
     });
 
-    it('should return empty array when no resumes', () => {
-      mockStmt.all.mockReturnValue([]);
+    it("should return empty array when no resumes", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (
+            sql.includes(
+              "SELECT id, resumeId, data, updatedAt FROM user_resumes",
+            )
+          ) {
+            return { rows: [] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.getUserResumes('user-123');
+      const result = await dbOperations.getUserResumes("user-123");
 
       expect(result).toEqual([]);
     });
   });
 
-  describe('upsertUserResume', () => {
-    it('should update existing resume', () => {
-      const existingStmt = {
-        get: vi.fn().mockReturnValue({ id: 'row-1' }),
-      };
-      const updateStmt = {
-        run: vi.fn(),
-      };
-
-      mockDb.prepare
-        .mockReturnValueOnce(existingStmt) // existing check
-        .mockReturnValueOnce(updateStmt) // update statement
-        .mockReturnValueOnce({ all: vi.fn().mockReturnValue([]) }); // cleanup check
-
-      const userCheckStmt = {
-        get: vi
-          .fn()
-          .mockReturnValue({ id: 'user-123', email: 'test@example.com' }),
-      };
-      mockDb.prepare.mockReturnValueOnce(userCheckStmt);
-
-      dbOperations.upsertUserResume('user-123', {
-        resumeId: 'resume-1',
-        data: '{"title":"Updated"}',
-        resumeRowId: 'row-1',
+  describe("upsertUserResume", () => {
+    it("should update existing resume", async () => {
+      const txExecute = vi.fn().mockResolvedValue({ rows: [] });
+      const txCommit = vi.fn().mockResolvedValue(undefined);
+      const txClose = vi.fn();
+      mockClient.transaction.mockResolvedValue({
+        execute: txExecute,
+        commit: txCommit,
+        close: txClose,
       });
 
-      expect(updateStmt.run).toHaveBeenCalled();
+      const userRow = {
+        id: "user-123",
+        email: "test@example.com",
+        password: null,
+        name: null,
+        image: null,
+        createdAt: Date.now(),
+      };
+
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE id = ?")) {
+            return { rows: [userRow] };
+          }
+          if (sql.includes("SELECT id FROM user_resumes WHERE userId = ?")) {
+            return { rows: [{ id: "row-1" }] };
+          }
+          return { rows: [] };
+        },
+      );
+
+      await dbOperations.upsertUserResume("user-123", {
+        resumeId: "resume-1",
+        data: '{"title":"Updated"}',
+        resumeRowId: "row-1",
+      });
+
+      expect(txExecute).toHaveBeenCalled();
+      expect(txCommit).toHaveBeenCalled();
+      expect(txClose).toHaveBeenCalled();
     });
 
-    it('should insert new resume', () => {
-      const existingStmt = {
-        get: vi.fn().mockReturnValue(undefined),
-      };
-      const insertStmt = {
-        run: vi.fn(),
+    it("should insert new resume", async () => {
+      const txExecute = vi.fn().mockResolvedValue({ rows: [] });
+      const txCommit = vi.fn().mockResolvedValue(undefined);
+      const txClose = vi.fn();
+      mockClient.transaction.mockResolvedValue({
+        execute: txExecute,
+        commit: txCommit,
+        close: txClose,
+      });
+
+      const userRow = {
+        id: "user-123",
+        email: "test@example.com",
+        password: null,
+        name: null,
+        image: null,
+        createdAt: Date.now(),
       };
 
-      mockDb.prepare
-        .mockReturnValueOnce(existingStmt) // existing check
-        .mockReturnValueOnce(insertStmt) // insert statement
-        .mockReturnValueOnce({ all: vi.fn().mockReturnValue([]) }); // cleanup check
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE id = ?")) {
+            return { rows: [userRow] };
+          }
+          if (sql.includes("SELECT id FROM user_resumes WHERE userId = ?")) {
+            return { rows: [] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const userCheckStmt = {
-        get: vi
-          .fn()
-          .mockReturnValue({ id: 'user-123', email: 'test@example.com' }),
-      };
-      mockDb.prepare.mockReturnValueOnce(userCheckStmt);
-
-      dbOperations.upsertUserResume('user-123', {
-        resumeId: 'resume-1',
+      await dbOperations.upsertUserResume("user-123", {
+        resumeId: "resume-1",
         data: '{"title":"New"}',
       });
 
-      expect(insertStmt.run).toHaveBeenCalled();
+      expect(txExecute).toHaveBeenCalled();
+      expect(txCommit).toHaveBeenCalled();
     });
   });
 
-  describe('getTransformUsage', () => {
-    it('should return usage count', () => {
-      mockStmt.get.mockReturnValue({ transformUsage: 3 });
+  describe("getTransformUsage", () => {
+    it("should return usage count", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT transformUsage FROM user_usage")) {
+            return { rows: [{ transformUsage: 3 }] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.getTransformUsage('user-123');
+      const result = await dbOperations.getTransformUsage("user-123");
 
       expect(result).toBe(3);
     });
 
-    it('should return 0 when no usage record exists', () => {
-      mockStmt.get.mockReturnValue(undefined);
+    it("should return 0 when no usage record exists", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT transformUsage FROM user_usage")) {
+            return { rows: [] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.getTransformUsage('user-123');
-
-      expect(result).toBe(0);
-    });
-  });
-
-  describe('incrementTransformUsage', () => {
-    it('should increment usage count', () => {
-      const upsertStmt = {
-        run: vi.fn(),
-      };
-
-      mockDb.prepare.mockReturnValueOnce({
-        get: vi.fn().mockReturnValue({ id: 'user-123' }),
-      }); // user check
-      mockDb.prepare.mockReturnValueOnce(upsertStmt); // upsert statement
-
-      dbOperations.incrementTransformUsage('user-123');
-
-      expect(upsertStmt.run).toHaveBeenCalledWith('user-123');
-    });
-  });
-
-  describe('getAISuggestionUsage', () => {
-    it('should return usage count when within 24 hours', () => {
-      const now = Date.now();
-      const oneHourAgo = now - 60 * 60 * 1000;
-
-      mockStmt.get.mockReturnValue({
-        aiSuggestionUsage: 5,
-        aiSuggestionLastReset: oneHourAgo,
-      });
-
-      const result = dbOperations.getAISuggestionUsage('user-123');
-
-      expect(result).toBe(5);
-    });
-
-    it('should reset usage when 24 hours have passed', () => {
-      const now = Date.now();
-      const twentyFiveHoursAgo = now - 25 * 60 * 60 * 1000;
-
-      const resetStmt = {
-        run: vi.fn(),
-      };
-
-      mockStmt.get.mockReturnValue({
-        aiSuggestionUsage: 10,
-        aiSuggestionLastReset: twentyFiveHoursAgo,
-      });
-
-      mockDb.prepare
-        .mockReturnValueOnce(mockStmt)
-        .mockReturnValueOnce(resetStmt);
-
-      const result = dbOperations.getAISuggestionUsage('user-123');
-
-      expect(result).toBe(0);
-      expect(resetStmt.run).toHaveBeenCalled();
-    });
-
-    it('should return 0 when no usage record exists', () => {
-      mockStmt.get.mockReturnValue(undefined);
-
-      const result = dbOperations.getAISuggestionUsage('user-123');
+      const result = await dbOperations.getTransformUsage("user-123");
 
       expect(result).toBe(0);
     });
   });
 
-  describe('incrementAISuggestionUsage', () => {
-    it('should increment usage and set reset time', () => {
-      const upsertStmt = {
-        run: vi.fn(),
+  describe("incrementTransformUsage", () => {
+    it("should increment usage count", async () => {
+      const userRow = {
+        id: "user-123",
+        email: "test@example.com",
+        password: null,
+        name: null,
+        image: null,
+        createdAt: Date.now(),
       };
 
-      mockDb.prepare.mockReturnValue(upsertStmt);
+      let transformSelectCount = 0;
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE id = ?")) {
+            return { rows: [userRow] };
+          }
+          if (sql.includes("INSERT INTO user_usage")) {
+            return { rows: [], rowsAffected: 1 };
+          }
+          if (sql.includes("SELECT transformUsage FROM user_usage")) {
+            transformSelectCount += 1;
+            return { rows: [{ transformUsage: transformSelectCount }] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      dbOperations.incrementAISuggestionUsage('user-123');
+      await dbOperations.incrementTransformUsage("user-123");
 
-      expect(upsertStmt.run).toHaveBeenCalledWith(
-        'user-123',
-        expect.any(Number),
-        expect.any(Number),
+      expect(mockClient.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sql: expect.stringContaining("INSERT INTO user_usage"),
+          args: ["user-123"],
+        }),
       );
     });
   });
 
-  describe('deleteUserResume', () => {
-    it('should delete resume', () => {
-      const verifyStmt = {
-        get: vi.fn().mockReturnValue({ id: 'row-1' }),
-      };
-      const deleteStmt = {
-        run: vi.fn(),
-      };
+  describe("getAISuggestionUsage", () => {
+    it("should return usage count when within 24 hours", async () => {
+      const now = Date.now();
+      const oneHourAgo = now - 60 * 60 * 1000;
 
-      mockDb.prepare
-        .mockReturnValueOnce(verifyStmt)
-        .mockReturnValueOnce(deleteStmt);
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (
+            sql.includes(
+              "SELECT aiSuggestionUsage, aiSuggestionLastReset FROM user_usage",
+            )
+          ) {
+            return {
+              rows: [
+                {
+                  aiSuggestionUsage: 5,
+                  aiSuggestionLastReset: oneHourAgo,
+                },
+              ],
+            };
+          }
+          return { rows: [] };
+        },
+      );
 
-      dbOperations.deleteUserResume('user-123', 'resume-1');
+      const result = await dbOperations.getAISuggestionUsage("user-123");
 
-      expect(deleteStmt.run).toHaveBeenCalled();
+      expect(result).toBe(5);
     });
 
-    it('should throw error when resume not found', () => {
-      const verifyStmt = {
-        get: vi.fn().mockReturnValue(undefined),
-      };
+    it("should reset usage when 24 hours have passed", async () => {
+      const now = Date.now();
+      const twentyFiveHoursAgo = now - 25 * 60 * 60 * 1000;
 
-      mockDb.prepare.mockReturnValue(verifyStmt);
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (
+            sql.includes(
+              "SELECT aiSuggestionUsage, aiSuggestionLastReset FROM user_usage",
+            )
+          ) {
+            return {
+              rows: [
+                {
+                  aiSuggestionUsage: 10,
+                  aiSuggestionLastReset: twentyFiveHoursAgo,
+                },
+              ],
+            };
+          }
+          if (sql.includes("UPDATE user_usage")) {
+            return { rows: [], rowsAffected: 1 };
+          }
+          return { rows: [] };
+        },
+      );
 
-      expect(() => {
-        dbOperations.deleteUserResume('user-123', 'resume-1');
-      }).toThrow('Resume not found');
+      const result = await dbOperations.getAISuggestionUsage("user-123");
+
+      expect(result).toBe(0);
+      expect(mockClient.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sql: expect.stringContaining("UPDATE user_usage"),
+        }),
+      );
+    });
+
+    it("should return 0 when no usage record exists", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (
+            sql.includes(
+              "SELECT aiSuggestionUsage, aiSuggestionLastReset FROM user_usage",
+            )
+          ) {
+            return { rows: [] };
+          }
+          return { rows: [] };
+        },
+      );
+
+      const result = await dbOperations.getAISuggestionUsage("user-123");
+
+      expect(result).toBe(0);
     });
   });
 
-  describe('restoreUserResume', () => {
-    it('should restore deleted resume', () => {
-      const verifyStmt = {
-        get: vi.fn().mockReturnValue({ id: 'row-1' }),
-      };
-      const restoreStmt = {
-        run: vi.fn(),
-      };
+  describe("incrementAISuggestionUsage", () => {
+    it("should increment usage and set reset time", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("INSERT INTO user_usage")) {
+            return { rows: [], rowsAffected: 1 };
+          }
+          return { rows: [] };
+        },
+      );
 
-      mockDb.prepare
-        .mockReturnValueOnce(verifyStmt)
-        .mockReturnValueOnce(restoreStmt);
+      await dbOperations.incrementAISuggestionUsage("user-123");
 
-      dbOperations.restoreUserResume('user-123', 'resume-1');
-
-      expect(restoreStmt.run).toHaveBeenCalled();
-    });
-
-    it('should throw error when resume not found', () => {
-      const verifyStmt = {
-        get: vi.fn().mockReturnValue(undefined),
-      };
-
-      mockDb.prepare.mockReturnValue(verifyStmt);
-
-      expect(() => {
-        dbOperations.restoreUserResume('user-123', 'resume-1');
-      }).toThrow('Resume not found');
+      expect(mockClient.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          args: ["user-123", expect.any(Number), expect.any(Number)],
+        }),
+      );
     });
   });
 
-  describe('findUserByEmail', () => {
-    it('should find user by email', () => {
+  describe("deleteUserResume", () => {
+    it("should delete resume", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT id FROM user_resumes WHERE userId = ?")) {
+            return { rows: [{ id: "row-1" }] };
+          }
+          if (sql.includes("UPDATE user_resumes SET deletedAt")) {
+            return { rows: [], rowsAffected: 1 };
+          }
+          return { rows: [] };
+        },
+      );
+
+      await dbOperations.deleteUserResume("user-123", "resume-1");
+
+      expect(mockClient.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sql: expect.stringContaining("UPDATE user_resumes SET deletedAt"),
+        }),
+      );
+    });
+
+    it("should throw error when resume not found", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT id FROM user_resumes WHERE userId = ?")) {
+            return { rows: [] };
+          }
+          return { rows: [] };
+        },
+      );
+
+      await expect(
+        dbOperations.deleteUserResume("user-123", "resume-1"),
+      ).rejects.toThrow("Resume not found");
+    });
+  });
+
+  describe("restoreUserResume", () => {
+    it("should restore deleted resume", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT id FROM user_resumes WHERE userId = ?")) {
+            return { rows: [{ id: "row-1" }] };
+          }
+          if (sql.includes("UPDATE user_resumes SET deletedAt = NULL")) {
+            return { rows: [], rowsAffected: 1 };
+          }
+          return { rows: [] };
+        },
+      );
+
+      await dbOperations.restoreUserResume("user-123", "resume-1");
+
+      expect(mockClient.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sql: expect.stringContaining(
+            "UPDATE user_resumes SET deletedAt = NULL",
+          ),
+        }),
+      );
+    });
+
+    it("should throw error when resume not found", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT id FROM user_resumes WHERE userId = ?")) {
+            return { rows: [] };
+          }
+          return { rows: [] };
+        },
+      );
+
+      await expect(
+        dbOperations.restoreUserResume("user-123", "resume-1"),
+      ).rejects.toThrow("Resume not found");
+    });
+  });
+
+  describe("findUserByEmail", () => {
+    it("should find user by email", async () => {
       const mockUser = {
-        id: 'user-123',
-        email: 'test@example.com',
-        password: 'hashed',
-        name: 'Test',
+        id: "user-123",
+        email: "test@example.com",
+        password: "hashed",
+        name: "Test",
         image: null,
         createdAt: Date.now(),
       };
 
-      mockStmt.get.mockReturnValue(mockUser);
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE email = ?")) {
+            return { rows: [mockUser] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.findUserByEmail('test@example.com');
+      const result = await dbOperations.findUserByEmail("test@example.com");
 
       expect(result).toEqual(mockUser);
     });
 
-    it('should return null when user not found', () => {
-      mockStmt.get.mockReturnValue(undefined);
+    it("should return null when user not found", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE email = ?")) {
+            return { rows: [] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.findUserByEmail('test@example.com');
+      const result = await dbOperations.findUserByEmail("test@example.com");
 
       expect(result).toBeNull();
     });
   });
 
-  describe('findUserById', () => {
-    it('should find user by id', () => {
+  describe("findUserById", () => {
+    it("should find user by id", async () => {
       const mockUser = {
-        id: 'user-123',
-        email: 'test@example.com',
-        password: 'hashed',
-        name: 'Test',
+        id: "user-123",
+        email: "test@example.com",
+        password: "hashed",
+        name: "Test",
         image: null,
         createdAt: Date.now(),
       };
 
-      mockStmt.get.mockReturnValue(mockUser);
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE id = ?")) {
+            return { rows: [mockUser] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.findUserById('user-123');
+      const result = await dbOperations.findUserById("user-123");
 
       expect(result).toEqual(mockUser);
     });
 
-    it('should return null when user not found', () => {
-      mockStmt.get.mockReturnValue(undefined);
+    it("should return null when user not found", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE id = ?")) {
+            return { rows: [] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.findUserById('user-123');
+      const result = await dbOperations.findUserById("user-123");
 
       expect(result).toBeNull();
     });
   });
 
-  describe('updateUser', () => {
-    it('should update user fields', () => {
+  describe("updateUser", () => {
+    it("should update user fields", async () => {
       const mockUser = {
-        id: 'user-123',
-        email: 'test@example.com',
-        password: 'hashed',
-        name: 'Test',
+        id: "user-123",
+        email: "test@example.com",
+        password: "hashed",
+        name: "Test",
         image: null,
         createdAt: Date.now(),
       };
 
-      const updateStmt = {
-        run: vi.fn(),
-      };
+      let idSelectCalls = 0;
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE id = ?")) {
+            idSelectCalls += 1;
+            if (idSelectCalls === 1) return { rows: [mockUser] };
+            return { rows: [{ ...mockUser, name: "Updated" }] };
+          }
+          if (sql.includes("UPDATE users SET")) {
+            return { rows: [], rowsAffected: 1 };
+          }
+          return { rows: [] };
+        },
+      );
 
-      mockDb.prepare
-        .mockReturnValueOnce({ get: vi.fn().mockReturnValue(mockUser) }) // find user
-        .mockReturnValueOnce(updateStmt) // update statement
-        .mockReturnValueOnce({
-          get: vi.fn().mockReturnValue({ ...mockUser, name: 'Updated' }),
-        }); // get updated
-
-      const result = dbOperations.updateUser('user-123', {
-        name: 'Updated',
+      const result = await dbOperations.updateUser("user-123", {
+        name: "Updated",
       });
 
-      expect(updateStmt.run).toHaveBeenCalled();
-      expect(result?.name).toBe('Updated');
+      expect(mockClient.execute).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sql: expect.stringContaining("UPDATE users SET"),
+        }),
+      );
+      expect(result?.name).toBe("Updated");
     });
 
-    it('should return null when user not found', () => {
-      mockDb.prepare.mockReturnValue({
-        get: vi.fn().mockReturnValue(undefined),
-      });
+    it("should return null when user not found", async () => {
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE id = ?")) {
+            return { rows: [] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.updateUser('user-123', {
-        name: 'Updated',
+      const result = await dbOperations.updateUser("user-123", {
+        name: "Updated",
       });
 
       expect(result).toBeNull();
     });
 
-    it('should return user unchanged when no updates provided', () => {
+    it("should return user unchanged when no updates provided", async () => {
       const mockUser = {
-        id: 'user-123',
-        email: 'test@example.com',
-        password: 'hashed',
-        name: 'Test',
+        id: "user-123",
+        email: "test@example.com",
+        password: "hashed",
+        name: "Test",
         image: null,
         createdAt: Date.now(),
       };
 
-      mockDb.prepare.mockReturnValue({
-        get: vi.fn().mockReturnValue(mockUser),
-      });
+      mockClient.execute.mockImplementation(
+        async (stmt: { sql: string } | string) => {
+          const sql = typeof stmt === "string" ? stmt : stmt.sql;
+          if (sql === "PRAGMA foreign_keys = ON") return { rows: [] };
+          if (sql.includes("PRAGMA table_info(user_resumes)")) {
+            return { rows: [{ name: "deletedAt" }] };
+          }
+          if (sql.includes("PRAGMA table_info(user_usage)")) {
+            return {
+              rows: [
+                { name: "aiSuggestionUsage" },
+                { name: "aiSuggestionLastReset" },
+              ],
+            };
+          }
+          if (sql.includes("SELECT * FROM users WHERE id = ?")) {
+            return { rows: [mockUser] };
+          }
+          return { rows: [] };
+        },
+      );
 
-      const result = dbOperations.updateUser('user-123', {});
+      const result = await dbOperations.updateUser("user-123", {});
 
       expect(result).toEqual(mockUser);
     });

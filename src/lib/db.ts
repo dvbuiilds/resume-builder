@@ -1,7 +1,7 @@
 import crypto from 'crypto';
-import Database from 'better-sqlite3';
 import path from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { pathToFileURL } from 'url';
+import { createClient, type Client, type Row } from '@libsql/client';
 import { logger } from './logger';
 
 const MAX_RESUMES_PER_USER = 4;
@@ -9,25 +9,24 @@ const MAX_TRANSFORM_USAGE = 4;
 const MAX_AI_SUGGESTION_USAGE = 10;
 const AI_SUGGESTION_RESET_HOURS = 24;
 
-// Get database path from environment or use default
-const dbPath =
-  process.env.DATABASE_PATH ||
-  path.join(process.cwd(), 'data', 'database.sqlite');
-
-// Ensure data directory exists
-const dbDir = path.dirname(dbPath);
-if (!existsSync(dbDir)) {
-  mkdirSync(dbDir, { recursive: true });
+function createDbClient(): Client {
+  const tursoUrl = process.env.TURSO_DATABASE_URL?.trim();
+  const authToken = process.env.TURSO_AUTH_TOKEN?.trim();
+  if (tursoUrl) {
+    return createClient({
+      url: tursoUrl,
+      authToken: authToken || undefined,
+    });
+  }
+  const filePath =
+    process.env.DATABASE_PATH ||
+    path.join(process.cwd(), 'data', 'database.sqlite');
+  return createClient({ url: pathToFileURL(filePath).href });
 }
 
-// Initialize database
-const db = new Database(dbPath);
+const client = createDbClient();
 
-// Enable foreign keys
-db.pragma('foreign_keys = ON');
-
-// Create users table if it doesn't exist
-db.exec(`
+const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
@@ -57,47 +56,82 @@ db.exec(`
     transformUsage INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
   );
-`);
+`;
 
-// Migration: Add deletedAt column if it doesn't exist
-// SQLite doesn't support IF NOT EXISTS for columns, so we handle it manually
-try {
-  const tableInfo = db
-    .prepare('PRAGMA table_info(user_resumes)')
-    .all() as Array<{ name: string }>;
+async function runMigrations(): Promise<void> {
+  await client.execute('PRAGMA foreign_keys = ON');
+  await client.executeMultiple(SCHEMA_SQL);
 
-  const hasDeletedAt = tableInfo.some((col) => col.name === 'deletedAt');
-  if (!hasDeletedAt) {
-    db.exec('ALTER TABLE user_resumes ADD COLUMN deletedAt INTEGER');
+  try {
+    const tableInfo = await client.execute('PRAGMA table_info(user_resumes)');
+    const hasDeletedAt = tableInfo.rows.some(
+      (col) => String(col.name) === 'deletedAt',
+    );
+    if (!hasDeletedAt) {
+      await client.execute(
+        'ALTER TABLE user_resumes ADD COLUMN deletedAt INTEGER',
+      );
+    }
+  } catch (err) {
+    logger.warn('Migration check for deletedAt column failed:', err);
   }
-} catch (err) {
-  // Table might not exist yet, which is fine - it will be created with deletedAt
-  logger.warn('Migration check for deletedAt column failed:', err);
+
+  try {
+    const usageTableInfo = await client.execute('PRAGMA table_info(user_usage)');
+    const colNames = usageTableInfo.rows.map((col) => String(col.name));
+
+    if (!colNames.includes('aiSuggestionUsage')) {
+      await client.execute(
+        'ALTER TABLE user_usage ADD COLUMN aiSuggestionUsage INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+    if (!colNames.includes('aiSuggestionLastReset')) {
+      await client.execute(
+        'ALTER TABLE user_usage ADD COLUMN aiSuggestionLastReset INTEGER',
+      );
+    }
+  } catch (err) {
+    logger.warn('Migration check for AI suggestion columns failed:', err);
+  }
 }
 
-// Migration: Add AI suggestion usage columns if they don't exist
-try {
-  const usageTableInfo = db
-    .prepare('PRAGMA table_info(user_usage)')
-    .all() as Array<{ name: string }>;
+let initPromise: Promise<void> | null = null;
 
-  const hasAISuggestionUsage = usageTableInfo.some(
-    (col) => col.name === 'aiSuggestionUsage',
-  );
-  if (!hasAISuggestionUsage) {
-    db.exec(
-      'ALTER TABLE user_usage ADD COLUMN aiSuggestionUsage INTEGER NOT NULL DEFAULT 0',
-    );
+function ensureInitialized(): Promise<void> {
+  if (!initPromise) {
+    initPromise = runMigrations();
   }
+  return initPromise;
+}
 
-  const hasAISuggestionLastReset = usageTableInfo.some(
-    (col) => col.name === 'aiSuggestionLastReset',
-  );
-  if (!hasAISuggestionLastReset) {
-    db.exec('ALTER TABLE user_usage ADD COLUMN aiSuggestionLastReset INTEGER');
-  }
-} catch (err) {
-  logger.warn('Migration check for AI suggestion columns failed:', err);
+/** Clears cached schema init so the next DB call re-runs migrations (Vitest only). */
+export function __resetDbInitForTests(): void {
+  initPromise = null;
+}
+
+function rowToUser(row: Row): User {
+  return {
+    id: String(row.id),
+    email: String(row.email),
+    password: row.password != null ? String(row.password) : null,
+    name: row.name != null ? String(row.name) : null,
+    image: row.image != null ? String(row.image) : null,
+    createdAt: Number(row.createdAt),
+  };
+}
+
+function rowToResumeRow(row: Row): {
+  id: string;
+  resumeId: string;
+  data: string;
+  updatedAt: number;
+} {
+  return {
+    id: String(row.id),
+    resumeId: String(row.resumeId),
+    data: String(row.data),
+    updatedAt: Number(row.updatedAt),
+  };
 }
 
 export interface User {
@@ -109,64 +143,66 @@ export interface User {
   createdAt: number;
 }
 
-// Database operations
 export const dbOperations = {
-  // Create a new user
-  createUser: (user: {
+  createUser: async (user: {
     id: string;
     email: string;
     password: string | null;
     name?: string | null;
     image?: string | null;
-  }): User => {
-    const stmt = db.prepare(`
-      INSERT INTO users (id, email, password, name, image, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-
+  }): Promise<User> => {
+    await ensureInitialized();
     const now = Date.now();
-    stmt.run(
-      user.id,
-      user.email,
-      user.password,
-      user.name || null,
-      user.image || null,
-      now,
-    );
+    await client.execute({
+      sql: `
+        INSERT INTO users (id, email, password, name, image, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      args: [
+        user.id,
+        user.email,
+        user.password,
+        user.name ?? null,
+        user.image ?? null,
+        now,
+      ],
+    });
 
     return {
       id: user.id,
       email: user.email,
       password: user.password,
-      name: user.name || null,
-      image: user.image || null,
+      name: user.name ?? null,
+      image: user.image ?? null,
       createdAt: now,
     };
   },
 
-  getUserResumes: (
+  getUserResumes: async (
     userId: string,
-  ): Array<{
-    id: string;
-    resumeId: string;
-    data: string;
-    updatedAt: number;
-  }> => {
-    const stmt = db.prepare(
-      'SELECT id, resumeId, data, updatedAt FROM user_resumes WHERE userId = ? AND (deletedAt IS NULL OR deletedAt = 0) ORDER BY updatedAt DESC LIMIT ?',
-    );
-    return stmt.all(userId, MAX_RESUMES_PER_USER) as Array<{
+  ): Promise<
+    Array<{
       id: string;
       resumeId: string;
       data: string;
       updatedAt: number;
-    }>;
+    }>
+  > => {
+    await ensureInitialized();
+    const result = await client.execute({
+      sql: `SELECT id, resumeId, data, updatedAt FROM user_resumes
+            WHERE userId = ? AND (deletedAt IS NULL OR deletedAt = 0)
+            ORDER BY updatedAt DESC LIMIT ?`,
+      args: [userId, MAX_RESUMES_PER_USER],
+    });
+    return result.rows.map(rowToResumeRow);
   },
 
-  upsertUserResume: (
+  upsertUserResume: async (
     userId: string,
     options: { resumeRowId?: string; resumeId: string; data: string },
-  ): void => {
+  ): Promise<void> => {
+    await ensureInitialized();
     const now = Date.now();
 
     logger.info('[dbOperations.upsertUserResume] Starting upsert:', {
@@ -175,8 +211,7 @@ export const dbOperations = {
       hasRowId: !!options.resumeRowId,
     });
 
-    // Verify user exists before attempting upsert
-    const userCheck = dbOperations.findUserById(userId);
+    const userCheck = await dbOperations.findUserById(userId);
     logger.info('[dbOperations.upsertUserResume] User verification:', {
       userId,
       userExists: !!userCheck,
@@ -186,19 +221,19 @@ export const dbOperations = {
     if (!userCheck) {
       logger.error(
         '[dbOperations.upsertUserResume] User not found in database:',
-        {
-          userId,
-        },
+        { userId },
       );
       throw new Error(`User with id ${userId} not found in database`);
     }
 
-    const existingStmt = db.prepare(
-      'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
-    );
-    const existing = existingStmt.get(userId, options.resumeId) as
-      | { id: string }
-      | undefined;
+    const existingResult = await client.execute({
+      sql: 'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
+      args: [userId, options.resumeId],
+    });
+    const existingRow = existingResult.rows[0];
+    const existing = existingRow
+      ? { id: String(existingRow.id) }
+      : undefined;
 
     logger.info('[dbOperations.upsertUserResume] Existing resume check:', {
       userId,
@@ -207,7 +242,8 @@ export const dbOperations = {
       existingId: existing?.id,
     });
 
-    const upsert = db.transaction(() => {
+    const tx = await client.transaction('write');
+    try {
       if (existing) {
         logger.info(
           '[dbOperations.upsertUserResume] Updating existing resume:',
@@ -217,10 +253,10 @@ export const dbOperations = {
             rowId: existing.id,
           },
         );
-        const updateStmt = db.prepare(
-          'UPDATE user_resumes SET data = ?, updatedAt = ?, deletedAt = NULL WHERE id = ?',
-        );
-        updateStmt.run(options.data, now, existing.id);
+        await tx.execute({
+          sql: 'UPDATE user_resumes SET data = ?, updatedAt = ?, deletedAt = NULL WHERE id = ?',
+          args: [options.data, now, existing.id],
+        });
       } else {
         const rowId = options.resumeRowId ?? crypto.randomUUID();
         logger.info('[dbOperations.upsertUserResume] Inserting new resume:', {
@@ -228,11 +264,12 @@ export const dbOperations = {
           resumeId: options.resumeId,
           rowId,
         });
-        const insertStmt = db.prepare(
-          'INSERT INTO user_resumes (id, userId, resumeId, data, updatedAt, deletedAt) VALUES (?, ?, ?, ?, ?, NULL)',
-        );
         try {
-          insertStmt.run(rowId, userId, options.resumeId, options.data, now);
+          await tx.execute({
+            sql: `INSERT INTO user_resumes (id, userId, resumeId, data, updatedAt, deletedAt)
+                  VALUES (?, ?, ?, ?, ?, NULL)`,
+            args: [rowId, userId, options.resumeId, options.data, now],
+          });
           logger.info('[dbOperations.upsertUserResume] Insert successful:', {
             userId,
             resumeId: options.resumeId,
@@ -253,62 +290,58 @@ export const dbOperations = {
         }
       }
 
-      // Use efficient subquery to directly update old records without fetching all
-      const cleanupStmt = db.prepare(`
-        UPDATE user_resumes 
-        SET deletedAt = ? 
-        WHERE userId = ? 
-          AND (deletedAt IS NULL OR deletedAt = 0)
-          AND id NOT IN (
-            SELECT id FROM user_resumes 
-            WHERE userId = ? 
-              AND (deletedAt IS NULL OR deletedAt = 0)
-            ORDER BY updatedAt DESC 
-            LIMIT ?
-          )
-      `);
-      cleanupStmt.run(now, userId, userId, MAX_RESUMES_PER_USER);
-    });
+      await tx.execute({
+        sql: `
+          UPDATE user_resumes
+          SET deletedAt = ?
+          WHERE userId = ?
+            AND (deletedAt IS NULL OR deletedAt = 0)
+            AND id NOT IN (
+              SELECT id FROM user_resumes
+              WHERE userId = ?
+                AND (deletedAt IS NULL OR deletedAt = 0)
+              ORDER BY updatedAt DESC
+              LIMIT ?
+            )
+        `,
+        args: [now, userId, userId, MAX_RESUMES_PER_USER],
+      });
 
-    try {
-      upsert();
+      await tx.commit();
       logger.info(
         '[dbOperations.upsertUserResume] Upsert completed successfully:',
-        {
-          userId,
-          resumeId: options.resumeId,
-        },
+        { userId, resumeId: options.resumeId },
       );
     } catch (error) {
-      logger.error(
-        '[dbOperations.upsertUserResume] Upsert transaction failed:',
-        {
-          userId,
-          resumeId: options.resumeId,
-          error,
-          errorMessage: error instanceof Error ? error.message : String(error),
-          errorStack: error instanceof Error ? error.stack : undefined,
-        },
-      );
+      logger.error('[dbOperations.upsertUserResume] Upsert transaction failed:', {
+        userId,
+        resumeId: options.resumeId,
+        error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+      });
       throw error;
+    } finally {
+      tx.close();
     }
   },
 
-  getTransformUsage: (userId: string): number => {
-    const stmt = db.prepare(
-      'SELECT transformUsage FROM user_usage WHERE userId = ?',
-    );
-    const row = stmt.get(userId) as { transformUsage: number } | undefined;
-    return row?.transformUsage ?? 0;
+  getTransformUsage: async (userId: string): Promise<number> => {
+    await ensureInitialized();
+    const result = await client.execute({
+      sql: 'SELECT transformUsage FROM user_usage WHERE userId = ?',
+      args: [userId],
+    });
+    const row = result.rows[0];
+    if (!row) return 0;
+    return Number(row.transformUsage ?? 0);
   },
 
-  incrementTransformUsage: (userId: string) => {
-    logger.info('[dbOperations.incrementTransformUsage] Starting:', {
-      userId,
-    });
+  incrementTransformUsage: async (userId: string): Promise<void> => {
+    await ensureInitialized();
+    logger.info('[dbOperations.incrementTransformUsage] Starting:', { userId });
 
-    // Verify user exists before attempting to increment usage
-    const userCheck = dbOperations.findUserById(userId);
+    const userCheck = await dbOperations.findUserById(userId);
     logger.info('[dbOperations.incrementTransformUsage] User verification:', {
       userId,
       userExists: !!userCheck,
@@ -318,27 +351,25 @@ export const dbOperations = {
     if (!userCheck) {
       logger.error(
         '[dbOperations.incrementTransformUsage] User not found in database:',
-        {
-          userId,
-        },
+        { userId },
       );
       throw new Error(`User with id ${userId} not found in database`);
     }
 
     try {
-      const upsert = db.prepare(`
-        INSERT INTO user_usage (userId, transformUsage)
-        VALUES (?, 1)
-        ON CONFLICT(userId)
-        DO UPDATE SET transformUsage = transformUsage + 1
-      `);
-      upsert.run(userId);
+      await client.execute({
+        sql: `
+          INSERT INTO user_usage (userId, transformUsage)
+          VALUES (?, 1)
+          ON CONFLICT(userId)
+          DO UPDATE SET transformUsage = transformUsage + 1
+        `,
+        args: [userId],
+      });
+      const newUsage = await dbOperations.getTransformUsage(userId);
       logger.info(
         '[dbOperations.incrementTransformUsage] Usage incremented successfully:',
-        {
-          userId,
-          newUsage: dbOperations.getTransformUsage(userId),
-        },
+        { userId, newUsage },
       );
     } catch (error) {
       logger.error(
@@ -356,108 +387,117 @@ export const dbOperations = {
 
   maxTransformUsage: MAX_TRANSFORM_USAGE,
 
-  getAISuggestionUsage: (userId: string): number => {
-    // Check if 24 hours have passed since last reset
-    const stmt = db.prepare(
-      'SELECT aiSuggestionUsage, aiSuggestionLastReset FROM user_usage WHERE userId = ?',
-    );
-    const row = stmt.get(userId) as
-      | { aiSuggestionUsage: number; aiSuggestionLastReset: number | null }
-      | undefined;
-
+  getAISuggestionUsage: async (userId: string): Promise<number> => {
+    await ensureInitialized();
+    const result = await client.execute({
+      sql: 'SELECT aiSuggestionUsage, aiSuggestionLastReset FROM user_usage WHERE userId = ?',
+      args: [userId],
+    });
+    const row = result.rows[0];
     if (!row) {
       return 0;
     }
 
     const now = Date.now();
-    const lastReset = row.aiSuggestionLastReset ?? 0;
+    const lastReset = Number(row.aiSuggestionLastReset ?? 0);
     const hoursSinceReset = (now - lastReset) / (1000 * 60 * 60);
 
-    // Reset if 24 hours have passed
     if (hoursSinceReset >= AI_SUGGESTION_RESET_HOURS) {
-      const resetStmt = db.prepare(`
-        UPDATE user_usage
-        SET aiSuggestionUsage = 0, aiSuggestionLastReset = ?
-        WHERE userId = ?
-      `);
-      resetStmt.run(now, userId);
+      await client.execute({
+        sql: `
+          UPDATE user_usage
+          SET aiSuggestionUsage = 0, aiSuggestionLastReset = ?
+          WHERE userId = ?
+        `,
+        args: [now, userId],
+      });
       return 0;
     }
 
-    return row.aiSuggestionUsage ?? 0;
+    return Number(row.aiSuggestionUsage ?? 0);
   },
 
-  incrementAISuggestionUsage: (userId: string) => {
+  incrementAISuggestionUsage: async (userId: string): Promise<void> => {
+    await ensureInitialized();
     const now = Date.now();
-    const upsert = db.prepare(`
-      INSERT INTO user_usage (userId, aiSuggestionUsage, aiSuggestionLastReset)
-      VALUES (?, 1, ?)
-      ON CONFLICT(userId)
-      DO UPDATE SET 
-        aiSuggestionUsage = aiSuggestionUsage + 1,
-        aiSuggestionLastReset = CASE 
-          WHEN aiSuggestionLastReset IS NULL OR (aiSuggestionUsage + 1 = 1) THEN ?
-          ELSE aiSuggestionLastReset
-        END
-    `);
-    upsert.run(userId, now, now);
+    await client.execute({
+      sql: `
+        INSERT INTO user_usage (userId, aiSuggestionUsage, aiSuggestionLastReset)
+        VALUES (?, 1, ?)
+        ON CONFLICT(userId)
+        DO UPDATE SET
+          aiSuggestionUsage = aiSuggestionUsage + 1,
+          aiSuggestionLastReset = CASE
+            WHEN aiSuggestionLastReset IS NULL OR (aiSuggestionUsage + 1 = 1) THEN ?
+            ELSE aiSuggestionLastReset
+          END
+      `,
+      args: [userId, now, now],
+    });
   },
 
   maxAISuggestionUsage: MAX_AI_SUGGESTION_USAGE,
 
-  deleteUserResume: (userId: string, resumeId: string): void => {
-    const verifyStmt = db.prepare(
-      'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
-    );
-    const existing = verifyStmt.get(userId, resumeId) as
-      | { id: string }
-      | undefined;
-
-    if (!existing) {
+  deleteUserResume: async (
+    userId: string,
+    resumeId: string,
+  ): Promise<void> => {
+    await ensureInitialized();
+    const verifyResult = await client.execute({
+      sql: 'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
+      args: [userId, resumeId],
+    });
+    if (!verifyResult.rows[0]) {
       throw new Error('Resume not found');
     }
 
     const now = Date.now();
-    const deleteStmt = db.prepare(
-      'UPDATE user_resumes SET deletedAt = ? WHERE userId = ? AND resumeId = ?',
-    );
-    deleteStmt.run(now, userId, resumeId);
+    await client.execute({
+      sql: 'UPDATE user_resumes SET deletedAt = ? WHERE userId = ? AND resumeId = ?',
+      args: [now, userId, resumeId],
+    });
   },
 
-  restoreUserResume: (userId: string, resumeId: string): void => {
-    const verifyStmt = db.prepare(
-      'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
-    );
-    const existing = verifyStmt.get(userId, resumeId) as
-      | { id: string }
-      | undefined;
-
-    if (!existing) {
+  restoreUserResume: async (
+    userId: string,
+    resumeId: string,
+  ): Promise<void> => {
+    await ensureInitialized();
+    const verifyResult = await client.execute({
+      sql: 'SELECT id FROM user_resumes WHERE userId = ? AND resumeId = ?',
+      args: [userId, resumeId],
+    });
+    if (!verifyResult.rows[0]) {
       throw new Error('Resume not found');
     }
 
-    const restoreStmt = db.prepare(
-      'UPDATE user_resumes SET deletedAt = NULL WHERE userId = ? AND resumeId = ?',
-    );
-    restoreStmt.run(userId, resumeId);
+    await client.execute({
+      sql: 'UPDATE user_resumes SET deletedAt = NULL WHERE userId = ? AND resumeId = ?',
+      args: [userId, resumeId],
+    });
   },
 
-  // Find user by email
-  findUserByEmail: (email: string): User | null => {
-    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
-    const row = stmt.get(email) as User | undefined;
-    return row || null;
+  findUserByEmail: async (email: string): Promise<User | null> => {
+    await ensureInitialized();
+    const result = await client.execute({
+      sql: 'SELECT * FROM users WHERE email = ?',
+      args: [email],
+    });
+    const row = result.rows[0];
+    return row ? rowToUser(row) : null;
   },
 
-  // Find user by ID
-  findUserById: (id: string): User | null => {
-    const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
-    const row = stmt.get(id) as User | undefined;
-    return row || null;
+  findUserById: async (id: string): Promise<User | null> => {
+    await ensureInitialized();
+    const result = await client.execute({
+      sql: 'SELECT * FROM users WHERE id = ?',
+      args: [id],
+    });
+    const row = result.rows[0];
+    return row ? rowToUser(row) : null;
   },
 
-  // Update user
-  updateUser: (
+  updateUser: async (
     id: string,
     updates: {
       email?: string;
@@ -465,12 +505,13 @@ export const dbOperations = {
       image?: string;
       password?: string | null;
     },
-  ): User | null => {
-    const user = dbOperations.findUserById(id);
+  ): Promise<User | null> => {
+    await ensureInitialized();
+    const user = await dbOperations.findUserById(id);
     if (!user) return null;
 
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: (string | null)[] = [];
 
     if (updates.email !== undefined) {
       fields.push('email = ?');
@@ -492,13 +533,11 @@ export const dbOperations = {
     if (fields.length === 0) return user;
 
     values.push(id);
-    const stmt = db.prepare(
-      `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
-    );
-    stmt.run(...values);
+    await client.execute({
+      sql: `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
+      args: values as (string | null)[],
+    });
 
     return dbOperations.findUserById(id);
   },
 };
-
-export default db;

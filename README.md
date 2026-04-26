@@ -4,9 +4,9 @@ AI-assisted resume creation and management platform built with Next.js. Create p
 
 ## Overview
 
-- **Stack**: Next.js App Router (TypeScript), React 18, Zustand, NextAuth, better-sqlite3, Tailwind CSS
+- **Stack**: Next.js App Router (TypeScript), React 19, Zustand, NextAuth, Turso (libSQL via `@libsql/client`), Tailwind CSS
 - **LLM Integration**: Groq chat completions power PDF → structured resume transformation
-- **Persistence**: SQLite for users/resume history/usage limits + dual localStorage/sessionStorage sync for in-progress editing
+- **Persistence**: Turso (remote libSQL) for users/resume history/usage limits; optional local `file:` SQLite via `DATABASE_PATH` when `TURSO_DATABASE_URL` is unset; dual localStorage/sessionStorage for in-progress editing
 - **Deployment Target**: Vercel
 
 ## Features
@@ -188,7 +188,7 @@ src/
 │       └── types/                           # Resume schema & sanitizers
 │
 ├── lib/
-│   ├── db.ts                                # better-sqlite3 setup, CRUD helpers
+│   ├── db.ts                                # @libsql/client (Turso / file), CRUD helpers
 │   └── llm/transform-pdf-utils.ts           # JSON extraction + sanitize LLM response
 │
 └── utils/

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     );
     const { userId } = session;
 
-    const currentUsage = dbOperations.getTransformUsage(userId);
+    const currentUsage = await dbOperations.getTransformUsage(userId);
 
     if (currentUsage >= dbOperations.maxTransformUsage) {
       return createErrorResponse(
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    dbOperations.incrementTransformUsage(userId);
+    await dbOperations.incrementTransformUsage(userId);
 
     return NextResponse.json({ data }, { status: 200 });
   } catch (err: unknown) {
