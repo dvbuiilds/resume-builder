@@ -232,9 +232,9 @@ const authOptions: NextAuthOptions = {
               email: token.email,
             },
           );
-          // Return null to invalidate the session
-          // Type assertion needed because NextAuth types don't officially support null
-          return null as any;
+          // Return empty object to signal "no session" to the client.
+          // Returning null causes CLIENT_FETCH_ERROR on the client side.
+          return {} as any;
         }
 
         // User exists, populate session with database data
