@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "NODE_ENV=development next dev",
+    "build": "rm -r .next && next build",
+    "start": "NODE_ENV=production next start",
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
