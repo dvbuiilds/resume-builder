@@ -25,7 +25,7 @@ export const GET = async (request: NextRequest) => {
     const session = await requireAuth(request);
     const { userId } = session;
 
-    const rows = dbOperations.getUserResumes(userId);
+    const rows = await dbOperations.getUserResumes(userId);
     return NextResponse.json({ data: serializeResumes(rows) }, { status: 200 });
   } catch (err) {
     if (err instanceof NextResponse) {
@@ -60,13 +60,13 @@ export const POST = async (request: NextRequest) => {
       return createErrorResponse('Invalid payload', 400);
     }
 
-    dbOperations.upsertUserResume(userId, {
+    await dbOperations.upsertUserResume(userId, {
       resumeRowId: rowId,
       resumeId,
       data,
     });
 
-    const rows = dbOperations.getUserResumes(userId);
+    const rows = await dbOperations.getUserResumes(userId);
     return NextResponse.json({ data: serializeResumes(rows) }, { status: 200 });
   } catch (err) {
     if (err instanceof NextResponse) {
@@ -97,9 +97,9 @@ export const DELETE = async (request: NextRequest) => {
       return createErrorResponse('Invalid payload', 400);
     }
 
-    dbOperations.deleteUserResume(userId, resumeId);
+    await dbOperations.deleteUserResume(userId, resumeId);
 
-    const rows = dbOperations.getUserResumes(userId);
+    const rows = await dbOperations.getUserResumes(userId);
     return NextResponse.json({ data: serializeResumes(rows) }, { status: 200 });
   } catch (err) {
     if (err instanceof NextResponse) {
@@ -129,9 +129,9 @@ export const PATCH = async (request: NextRequest) => {
       return createErrorResponse('Invalid payload', 400);
     }
 
-    dbOperations.restoreUserResume(userId, resumeId);
+    await dbOperations.restoreUserResume(userId, resumeId);
 
-    const rows = dbOperations.getUserResumes(userId);
+    const rows = await dbOperations.getUserResumes(userId);
     return NextResponse.json({ data: serializeResumes(rows) }, { status: 200 });
   } catch (err) {
     if (err instanceof NextResponse) {

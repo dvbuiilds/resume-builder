@@ -42,17 +42,17 @@ export const createMockUser = (overrides?: Partial<User>): User => ({
 
 export const mockGetToken = vi.fn();
 export const mockDbOperations = {
-  findUserById: vi.fn(),
-  getAISuggestionUsage: vi.fn(),
-  incrementAISuggestionUsage: vi.fn(),
+  findUserById: vi.fn().mockResolvedValue(null),
+  getAISuggestionUsage: vi.fn().mockResolvedValue(0),
+  incrementAISuggestionUsage: vi.fn().mockResolvedValue(undefined),
   maxAISuggestionUsage: 10,
-  getTransformUsage: vi.fn(),
-  incrementTransformUsage: vi.fn(),
+  getTransformUsage: vi.fn().mockResolvedValue(0),
+  incrementTransformUsage: vi.fn().mockResolvedValue(undefined),
   maxTransformUsage: 4,
-  getUserResumes: vi.fn(),
-  upsertUserResume: vi.fn(),
-  deleteUserResume: vi.fn(),
-  restoreUserResume: vi.fn(),
+  getUserResumes: vi.fn().mockResolvedValue([]),
+  upsertUserResume: vi.fn().mockResolvedValue(undefined),
+  deleteUserResume: vi.fn().mockResolvedValue(undefined),
+  restoreUserResume: vi.fn().mockResolvedValue(undefined),
 };
 
 // Mock next-auth/jwt

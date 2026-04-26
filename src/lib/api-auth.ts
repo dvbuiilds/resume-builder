@@ -25,7 +25,7 @@ export async function validateUserSession(
     return null;
   }
 
-  const user = dbOperations.findUserById(userId);
+  const user = await dbOperations.findUserById(userId);
   if (!user) {
     return null;
   }
