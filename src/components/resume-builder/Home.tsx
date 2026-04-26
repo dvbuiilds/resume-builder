@@ -301,9 +301,11 @@ const Home: React.FC = () => {
               CV PDF.
             </p>
             {selectedFile ? (
-              <p className="mt-2 text-xs text-gray-600">
-                Selected file:{' '}
-                <span className="font-medium">{selectedFile.name}</span>
+              <p className="mt-2 flex min-w-0 items-baseline gap-1 text-xs text-gray-600">
+                <span className="shrink-0">Selected file:</span>
+                <span className="min-w-0 truncate font-medium">
+                  {selectedFile.name}
+                </span>
               </p>
             ) : null}
           </div>
