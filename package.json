@@ -19,7 +19,7 @@
     "better-sqlite3": "^11.0.0",
     "groq-sdk": "^0.34.0",
     "immer": "^10.1.1",
-    "next": "^15.5.6",
+    "next": "15.5.9",
     "next-auth": "^4.24.5",
     "pdfjs-dist": "^5.4.394",
     "react": "^18",
