@@ -2,13 +2,9 @@ import React, { type ChangeEvent } from 'react';
 
 // HOOKS
 import { useResumeStore } from '../../store/resumeStore';
-import type {
-  Projects as ProjectsType,
-  Project,
-} from '../../types/resume-data';
+import type { Project } from '../../types/resume-data';
 
 // COMPONENTS
-import { Experience } from '../../types/resume-data';
 import {
   BlueButton,
   ButtonWithCrossIcon,
@@ -35,12 +31,12 @@ export const ProjectsEditBox: React.FC = () => {
     setProjectsTitle(event.target.value);
   };
 
-  const handleExperienceChange = (
+  const handleProjectChange = (
     index: number,
-    field: keyof Experience,
+    field: keyof Project,
     value: string,
   ) => {
-    updateProject(index, { [field]: value } as any);
+    updateProject(index, { [field]: value } as Partial<Project>);
   };
 
   const handleDescriptionChange = (
@@ -93,7 +89,7 @@ export const ProjectsEditBox: React.FC = () => {
           deleteDescription={deleteDescription}
           deleteProject={deleteProject}
           handleDescriptionChange={handleDescriptionChange}
-          handleExperienceChange={handleExperienceChange}
+          handleProjectChange={handleProjectChange}
         />
       ))}
 
@@ -105,9 +101,9 @@ export const ProjectsEditBox: React.FC = () => {
 interface ProjectEditBoxProps {
   index: number;
   data: Project;
-  handleExperienceChange: (
+  handleProjectChange: (
     index: number,
-    keyName: keyof Experience,
+    keyName: keyof Project,
     value: string,
   ) => void;
   deleteProject: (index: number) => void;
@@ -123,7 +119,7 @@ interface ProjectEditBoxProps {
 const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
   index,
   data,
-  handleExperienceChange,
+  handleProjectChange,
   deleteProject,
   handleDescriptionChange,
   addNewDescription,
@@ -138,7 +134,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
       <InputField
         value={data.organizationName}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
-          handleExperienceChange(index, 'companyName', event.target.value)
+          handleProjectChange(index, 'organizationName', event.target.value)
         }
         placeholder="Company Name"
       />
@@ -146,7 +142,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
         type="text"
         value={data.projectTitle}
         onChange={(event: ChangeEvent<HTMLInputElement>) =>
-          handleExperienceChange(index, 'jobTitle', event.target.value)
+          handleProjectChange(index, 'projectTitle', event.target.value)
         }
         placeholder="Project Title"
       />
@@ -155,7 +151,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
           type="text"
           value={data.startDate}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
-            handleExperienceChange(index, 'startDate', event.target.value)
+            handleProjectChange(index, 'startDate', event.target.value)
           }
           placeholder="Start Date"
         />
@@ -163,7 +159,7 @@ const ProjectEditBox: React.FC<ProjectEditBoxProps> = ({
           type="text"
           value={data.endDate}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
-            handleExperienceChange(index, 'endDate', event.target.value)
+            handleProjectChange(index, 'endDate', event.target.value)
           }
           placeholder="End Date"
         />
