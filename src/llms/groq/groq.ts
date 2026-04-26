@@ -42,12 +42,14 @@ export const getDescriptionSuggestionsWithGroq = async (
   let contextInfo = '';
   if (jobRole || companyName) {
     const parts: string[] = [];
-    if (jobRole) parts.push(`Job Role: ${jobRole}`);
-    if (companyName) parts.push(`Company/Organization: ${companyName}`);
-    contextInfo = `\n\nContext:\n${parts.join('\n')}`;
+    if (jobRole) parts.push(`Role: ${jobRole}`);
+    if (companyName) parts.push(`Org: ${companyName}`);
+    contextInfo = `\n${parts.join('\n')}`;
   }
 
-  const userPrompt = `Generate 3 professional resume description sentences based on the following description text: "${input}"${contextInfo}\n\nRequirements:\n- Each sentence should be concise, action-oriented, and professional\n- Use strong action verbs\n- Highlight achievements, impact, or responsibilities\n- Each sentence should be distinct and add value\n- Return ONLY a JSON object with a key "suggestions" whose value is an array of exactly 3 strings. No other keys or text.\n\nExample format: { "suggestions": ["First professional sentence.", "Second professional sentence.", "Third professional sentence."] }`;
+  const userPrompt = `Create 3 concise, action-led resume bullet variants.
+Text: ${JSON.stringify(input)}${contextInfo}
+Return JSON only: {"suggestions":["","",""]}`;
 
   const chatCompletion = await groq.chat.completions.create({
     messages: [
@@ -141,4 +143,4 @@ Rules:
 - Preserve dates as written.`;
 
 const DESCRIPTION_SUGGESTION_SYSTEM_PROMPT =
-  'You are a professional resume writing assistant. Your task is to generate concise, impactful resume description sentences that highlight achievements, responsibilities, and impact. Always return exactly 3 professional sentences as a JSON object: { "suggestions": [string, string, string] }.';
+  'Return JSON only. Write exactly 3 concise, achievement-focused resume sentences as {"suggestions":[string,string,string]}.';
