@@ -10,9 +10,6 @@ export const metadata: Metadata = {
   title: 'Resume Builder | Dhairya Varshney',
   description:
     'Generate, edit, and manage professional resumes with an AI-assisted builder and rich customization tools.',
-  icons: {
-    icon: '/favicon.ico',
-  },
   openGraph: {
     title: 'Resume Builder | Dhairya Varshney',
     description:

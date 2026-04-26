@@ -1,14 +1,7 @@
 'use client';
 
-import React, {
-  ChangeEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import pdfToText from 'react-pdftotext';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { FaUpload, FaGripVertical, FaHistory, FaGithub } from 'react-icons/fa';
@@ -23,6 +16,15 @@ import {
   getOrCreateResumeId,
   resetResumeToInitial,
 } from '@resume-builder/components/resume-builder/store/resumePersistence';
+import type { PdfExtractResult } from '@resume-builder/components/resume-builder/PdfUploadInput';
+
+const PdfUploadInput = dynamic(
+  () =>
+    import('@resume-builder/components/resume-builder/PdfUploadInput').then(
+      (m) => m.PdfUploadInput,
+    ),
+  { ssr: false },
+);
 
 const API_TIMEOUT_MS = 120_000;
 const PENDING_UPLOAD_KEY = 'resumeBuilder.pendingUpload';
@@ -33,15 +35,6 @@ type PendingUpload = {
   fileName: string | null;
   fileType: string | null;
 };
-
-const readFileAsDataUrl = (file: File): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () =>
-      reject(reader.error ?? new Error('Failed to read file as data URL.'));
-    reader.readAsDataURL(file);
-  });
 
 const getSessionStorage = (): Storage | null => {
   if (typeof window === 'undefined') {
@@ -123,53 +116,39 @@ const Home: React.FC = () => {
     [storage],
   );
 
-  const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event?.target?.files?.[0];
-      setSelectedFile(file ?? null);
-      setFileDataUrl(null);
+  const handleExtracted = useCallback(
+    ({ file, text, dataUrl }: PdfExtractResult) => {
+      setExtractedText(text);
+      setFileDataUrl(dataUrl);
       setError(null);
-
-      if (!file) {
-        setExtractedText('');
+      if (!isAuthenticated) {
+        persistPendingUpload({
+          extractedText: text,
+          fileDataUrl: dataUrl,
+          fileName: file.name ?? null,
+          fileType: file.type ?? null,
+        });
+      } else {
         persistPendingUpload(null);
-        return;
-      }
-
-      setIsExtracting(true);
-      try {
-        const [text, dataUrl] = await Promise.all([
-          pdfToText(file),
-          readFileAsDataUrl(file),
-        ]);
-
-        setExtractedText(text);
-        setFileDataUrl(dataUrl);
-
-        if (!isAuthenticated) {
-          persistPendingUpload({
-            extractedText: text,
-            fileDataUrl: dataUrl,
-            fileName: file.name ?? null,
-            fileType: file.type ?? null,
-          });
-        } else {
-          persistPendingUpload(null);
-        }
-      } catch (err) {
-        console.error('Failed to extract text from PDF:', err);
-        setExtractedText('');
-        setFileDataUrl(null);
-        setError(
-          'We could not read this PDF file. Please try another file or try again.',
-        );
-        persistPendingUpload(null);
-      } finally {
-        setIsExtracting(false);
       }
     },
-    [isAuthenticated],
+    [isAuthenticated, persistPendingUpload],
   );
+
+  const handleFileCleared = useCallback(() => {
+    setExtractedText('');
+    setFileDataUrl(null);
+    setError(null);
+    persistPendingUpload(null);
+  }, [persistPendingUpload]);
+
+  const handleExtractionError = useCallback((message: string) => {
+    setExtractedText('');
+    setFileDataUrl(null);
+    setSelectedFile(null);
+    setError(message);
+    persistPendingUpload(null);
+  }, [persistPendingUpload]);
 
   const handleCreateResume = useCallback(async () => {
     if (!isAuthenticated) {
@@ -309,11 +288,13 @@ const Home: React.FC = () => {
             <h2 className="text-lg mb-4">
               Upload your Resume or LinkedIn Profile PDF:
             </h2>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={handleFileChange}
-              className="block text-sm text-gray-800 file:py-2 file:px-4 file:border-0 file:text-sm file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer file:mr-4"
+            <PdfUploadInput
+              isAuthenticated={isAuthenticated}
+              onFileSelected={setSelectedFile}
+              onExtracting={setIsExtracting}
+              onExtracted={handleExtracted}
+              onCleared={handleFileCleared}
+              onError={handleExtractionError}
             />
             <p className="mt-3 text-xs text-gray-500">
               Supported formats: Resume PDF, LinkedIn profile PDF export, or any
